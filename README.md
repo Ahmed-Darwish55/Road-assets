@@ -7,6 +7,7 @@ Interactive tree of the road asset classification: 2 asset classifications, 12 a
 - Click a card to open what sits under it. Cards with nothing under them show a short note and their path in the tree.
 - **Show full tree** opens every level at once.
 - Full screen: the mouse wheel zooms, dragging moves the board.
+- Phones and tablets: drag with one finger to move, pinch with two fingers to zoom.
 
 ---
 

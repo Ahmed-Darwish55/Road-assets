@@ -139,6 +139,10 @@ i.dash{width:22px;height:12px;border:1.8px dashed var(--muted);border-radius:4px
 .treecard.fs .zoom{position:fixed;bottom:18px;inset-inline-end:18px;margin:0}
 html.fs-on,html.fs-on body{overflow:hidden}
 html.turn,html.turn body{overflow-x:clip}
+.scroll{touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
+.node,.allbtn,.zoom button,.fr{touch-action:manipulation}
+@media (pointer:coarse){.zoom button{width:42px;height:42px}.zoom button svg{width:19px;height:19px}.find input{font-size:16px}.allbtn{padding:10px 16px}.pop button{font-size:22px;padding:6px 10px}}
+@media (max-width:640px){.wrap{padding:14px 10px 40px}.bar{padding:12px 14px}.bar .acts{flex:1 1 100%}.bar .acts .find{flex:1 1 100%}.bar .allbtn{flex:1 1 100%;justify-content:center}#tree{padding:22px 16px 90px;padding-inline-end:310px;gap:60px}.pop{width:256px}.treecard.fs .bar .legend{display:none}}
 html.turn .wrap,html.turn .treecard.fs{will-change:transform;backface-visibility:hidden}
 .zoom button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .zoom output{min-width:46px;text-align:center;font-size:12.5px;font-weight:700;color:var(--text2);font-variant-numeric:tabular-nums}
@@ -155,9 +159,9 @@ html.turn .wrap,html.turn .treecard.fs{will-change:transform;backface-visibility
 .node:hover .shape{filter:drop-shadow(0 7px 9px rgba(20,30,27,.26))}
 .node:hover .edge{stroke-width:2.4}
 .node{translate:0 0;transition:color .35s ease,translate .22s ease}
-.node:hover{translate:0 -2px}
+@media (hover:hover){.node:hover{translate:0 -2px}}
 .node .ic{transition:scale .22s ease}
-.node:hover .ic{scale:1.08}
+@media (hover:hover){.node:hover .ic{scale:1.08}}
 @media (prefers-reduced-motion:reduce){.node:hover{translate:0 0}.node:hover .ic{scale:1}}
 .node.t-fam .bgp,.node.t-class .bgp,.node.t-group .bgp{fill:color-mix(in srgb,var(--k) 15%,var(--surface))}
 .node.t-group .edge{stroke-dasharray:6 4}
@@ -260,16 +264,17 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const NS='http://www.w3.org/2000/svg';
 const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TOUCH=matchMedia('(pointer:coarse)').matches;
 let LANG=location.hash==='#ar'?'ar':'en';
 const UI={
  en:{title:'Road Assets Tree',h1:'Road assets tree: from the root to the last component',intro:'Click a card to open what sits under it, and click it again to close. Cards with nothing under them show a short note.',
   c1:'Total assets',c2:'Classification',c3:'Groups',c4:'Assets per family',unit:'assets',asset:'Asset',comp:'Component',pav:'Pavement',npav:'Non-Pavement',
-  hint:'Click a family to open it in the tree',dash:'Dashed card: display grouping',num:'Number on a card: assets under it · drag to move, Ctrl + wheel to zoom',
+  hint:'Click a family to open it in the tree',dash:'Dashed card: display grouping',num:'Number on a card: assets under it · drag to move, Ctrl + wheel to zoom',numT:'Number on a card: assets under it · drag with a finger to move, pinch to zoom',
   ph:'Search: Bridge Deck, Luminaire, جسر…',none:'No match',path:'Path in the tree',all:'Show full tree',less:'Back to step by step',close:'Close',light:'Light mode',dark:'Dark mode',look:'Appearance',
   cap:{'root>class':'is classified into','class>group':'is grouped into','class>fam':'includes the family','group>fam':'includes the families','fam>asset':'contains the assets','asset>comp':'consists of the components','comp>comp':'consists of the components'}},
  ar:{title:'شجرة أصول الطرق',h1:'شجرة أصول الطرق: من الجذر إلى آخر مكوّن',intro:'اضغط أي بطاقة لتفتح ما يندرج تحتها، واضغطها مرة أخرى لتُغلق. البطاقة التي لا يندرج تحتها شيء تعرض شرحًا مختصرًا.',
   c1:'إجمالي الأصول',c2:'التصنيفان',c3:'المجموعات',c4:'عدد الأصول في كل قسم',unit:'أصلًا',asset:'أصل رئيسي',comp:'مكوّن تابع',pav:'رصفية',npav:'غير رصفية',
-  hint:'اضغط أي قسم ليُفتح في الشجرة',dash:'بطاقة بإطار متقطع: تجميع للعرض',num:'الرقم على البطاقة: عدد الأصول تحتها · اسحب للتحريك، Ctrl + العجلة للتكبير',
+  hint:'اضغط أي قسم ليُفتح في الشجرة',dash:'بطاقة بإطار متقطع: تجميع للعرض',num:'الرقم على البطاقة: عدد الأصول تحتها · اسحب للتحريك، Ctrl + العجلة للتكبير',numT:'الرقم على البطاقة: عدد الأصول تحتها · اسحب بإصبعك للتحريك، وبإصبعين للتكبير والتصغير',
   ph:'ابحث: جسر، Bridge Deck، كاميرا…',none:'لا توجد نتيجة',path:'المسار في الشجرة',all:'عرض الشجرة كاملة',less:'رجوع للعرض خطوة بخطوة',close:'إغلاق',light:'الوضع الفاتح',dark:'الوضع الداكن',look:'المظهر',
   cap:{'root>class':'تُصنَّف إلى','class>group':'ينقسم إلى المجموعات','class>fam':'يضم القسم','group>fam':'تضم الأقسام','fam>asset':'يحتوي على الأصول','asset>comp':'يتكوّن من المكونات','comp>comp':'يتكوّن من المكونات'}}};
 const EN={c1:'Assets',c2:'Asset Classification',c3:'Groups',c4:'Asset Family',asset:'Asset',comp:'Component',pav:'Pavement',npav:'Non-Pavement'};
@@ -307,7 +312,7 @@ function texts(){const u=UI[LANG],ar=LANG==='ar';document.documentElement.lang=L
   $('#t-h1').textContent=u.h1;$('#t-intro').textContent=u.intro;['c1','c2','c3','c4'].forEach(k=>$('#t-'+k).innerHTML=u[k]+(ar?` <span>${EN[k]}</span>`:''));
   $('#lang').classList.toggle('is-ar',ar);document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===LANG)));
   $('#theme').setAttribute('aria-label',u.look);document.querySelectorAll('[data-mode]').forEach(b=>{if(b.tagName==='BUTTON'){b.title=u[b.dataset.mode];b.setAttribute('aria-label',u[b.dataset.mode]);}});
-  $('#legend').innerHTML=['pav','str','oth','net'].map(k=>`<span class="b-${k}"><i class="dot"></i>${brn(k)}</span>`).join('')+`<span><i class="dash"></i>${u.dash}</span><span>${u.num}</span>`;
+  $('#legend').innerHTML=['pav','str','oth','net'].map(k=>`<span class="b-${k}"><i class="dot"></i>${brn(k)}</span>`).join('')+`<span><i class="dash"></i>${u.dash}</span><span>${TOUCH?u.numT:u.num}</span>`;
   $('#t-all').textContent=FULL?u.less:u.all;$('#all').setAttribute('aria-pressed',String(FULL));$('#q').placeholder=u.ph;$('#q').setAttribute('aria-label',u.ph);}
 function charts(){const u=UI[LANG],ar=LANG==='ar',lab=k=>u[k]+(ar?` (${EN[k]})`:'');
   const nMain=assets.filter(n=>n.type==='asset').length,nComp=assets.length-nMain,C=2*Math.PI*52;
@@ -421,7 +426,7 @@ function follow(n){const lv=tree.querySelector(`.level:not(.out)[data-i="${PATH.
   if(r.right>s.right-16)sc.scrollBy({left:r.right-s.right+60,behavior:still?'auto':'smooth'});else if(r.left<s.left+16)sc.scrollBy({left:r.left-s.left-60,behavior:still?'auto':'smooth'});}
 function hidePop(){if(pop){pop.remove();pop=null;if(!FULL)tree.style.minHeight='';}if(SEL){const b=tree.querySelector(`.node[data-id="${SEL.id}"]`);if(b)b.classList.remove('sel');}SEL=null;}
 function showPop(n){hidePop();const b=tree.querySelector(`.node[data-id="${n.id}"]`);if(!b)return;SEL=n;b.classList.add('sel');
-  const pw=280,rtl=LANG==='ar',cy=b.offsetTop+b.offsetHeight/2;
+  const pw=innerWidth<=640?256:280,rtl=LANG==='ar',cy=b.offsetTop+b.offsetHeight/2;
   pop=document.createElement('div');pop.className='pop b-'+n.br;pop.setAttribute('role','status');
   pop.innerHTML=`<button type="button" aria-label="${UI[LANG].close}">×</button><b>${esc(P(n))}</b><span class="sec">${esc(S(n))}</span><p>${esc(X(n)||'')}</p><div class="trail"><span class="tl">${UI[LANG].path}</span><ol>${chain(n).map(c=>`<li class="b-${c.br}">${esc(P(c))}<small>${esc(S(c))}</small></li>`).join('')}</ol></div>`;tree.appendChild(pop);
   let top=Math.max(8,cy-Math.min(pop.offsetHeight/2,34));const ph=pop.offsetHeight,room=tree.offsetHeight-ph-70;if(top>room)top=Math.max(8,Math.min(top,room),cy-ph+26);if(!FULL&&top+ph+16>tree.offsetHeight)tree.style.minHeight=(top+ph+16)+'px';pop.style.top=top+'px';pop.style.left=(rtl?b.offsetLeft-30-pw:b.offsetLeft+b.offsetWidth+30)+'px';pop.style.setProperty('--cy',(cy-top-1)+'px');
@@ -451,13 +456,13 @@ function fullLayout(play){const rtl=LANG==='ar',E=new Map([...tree.querySelector
     gsap.fromTo(b,{autoAlpha:0,scale:.3,transformOrigin:rtl?'100% 50%':'0% 50%'},{autoAlpha:1,scale:1,duration:.6,delay:dl,ease:'back.out(1.7)',clearProps:'transform,opacity,visibility'});});
   ws.forEach(o=>{gsap.fromTo(o.w,{strokeDasharray:1,strokeDashoffset:1},{strokeDashoffset:0,duration:.45,delay:(o.d-1)*.24+.1,ease:'power2.out',onComplete:()=>{o.w.style.strokeDasharray='';o.w.style.strokeDashoffset='';}});
     gsap.to(o.f,{opacity:1,duration:.4,delay:o.d*.24+.3});});}
-$('#all').addEventListener('click',()=>{if(busy)return;FULL=!FULL;setZoom(1);const top=$('#board').getBoundingClientRect().top;start();$('#board').scrollLeft=0;if(top<0)scrollBy({top:top-12});});
+$('#all').addEventListener('click',()=>{if(busy)return;FULL=!FULL;setZoom(innerWidth<=640?(FULL?.6:.8):1);const top=$('#board').getBoundingClientRect().top;start();$('#board').scrollLeft=0;if(top<0)scrollBy({top:top-12});});
 /* zoom */
-function setZoom(z){Z=Math.max(.2,Math.min(1.6,Math.round(z*10)/10));tree.style.zoom=Z;$('#zval').textContent=Math.round(Z*100)+'%';}
+function setZoom(z,fine){const q=fine?20:10;Z=Math.max(.2,Math.min(1.6,Math.round(z*q)/q));tree.style.zoom=Z;$('#zval').textContent=Math.round(Z*100)+'%';}
 $('#zoom').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='fs'){setFS(!FS);return;}const d=+b.dataset.z;setZoom(d?Z+d*.1:1);});
 let wacc=0;
-function zoomAt(sc,e,z){const r=sc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,z0=Z,rtl=LANG==='ar',qx=rtl?sc.clientWidth-px:px;
-  const cx=(Math.abs(sc.scrollLeft)+qx)/z0,cy=(sc.scrollTop+py)/z0;setZoom(z);if(Z===z0)return;
+function zoomAt(sc,e,z,fine){const r=sc.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,z0=Z,rtl=LANG==='ar',qx=rtl?sc.clientWidth-px:px;
+  const cx=(Math.abs(sc.scrollLeft)+qx)/z0,cy=(sc.scrollTop+py)/z0;setZoom(z,fine);if(Z===z0)return;
   sc.scrollLeft=(cx*Z-qx)*(rtl?-1:1);if(FS)sc.scrollTop=cy*Z-py;}
 $('#board').addEventListener('wheel',e=>{const sc=e.currentTarget,zoomKey=e.ctrlKey||e.metaKey;
   if(!FS&&!zoomKey)return;e.preventDefault();const k=e.deltaMode===1?40:e.deltaMode===2?sc.clientHeight:1;
@@ -470,6 +475,14 @@ function paintFS(on){FS=on;tc.classList.toggle('fs',on);page.classList.toggle('f
 function setFS(on){if(on){paintFS(true);if(tc.requestFullscreen)tc.requestFullscreen().catch(()=>{});}else{if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});paintFS(false);}}
 document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&FS)paintFS(false);});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&FS&&!document.fullscreenElement&&!pop&&$('#results').hidden)setFS(false);});
+
+/* touch: one finger moves the board, two fingers pinch to zoom */
+(function(){const sc=$('#board');let d0=0,z0=1;const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+  sc.addEventListener('touchstart',e=>{if(e.touches.length===2){d0=dist(e.touches);z0=Z;}},{passive:true});
+  sc.addEventListener('touchmove',e=>{if(e.touches.length!==2||!d0)return;e.preventDefault();const t=e.touches,z=Math.max(.2,Math.min(1.6,Math.round(z0*dist(t)/d0*20)/20));
+    if(z!==Z)zoomAt(sc,{clientX:(t[0].clientX+t[1].clientX)/2,clientY:(t[0].clientY+t[1].clientY)/2},z,true);},{passive:false});
+  const end=e=>{if(e.touches.length<2)d0=0;};sc.addEventListener('touchend',end);sc.addEventListener('touchcancel',end);
+  sc.addEventListener('gesturestart',e=>e.preventDefault());})();
 
 /* drag the board to move it */
 (function(){const sc=$('#board');let down=false,sx=0,sy=0,sl=0,st=0,moved=0;
@@ -522,7 +535,7 @@ $('#theme').addEventListener('click',e=>{const b=e.target.closest('button');if(!
   const t=document.startViewTransition(()=>writeMode(next));
   t.ready.then(()=>{page.animate({clipPath:dark?[closed,open]:[open,closed]},{duration:700,easing:dark?'cubic-bezier(0.55,0,0.8,0.6)':'cubic-bezier(0.2,0.4,0.45,1)',fill:'forwards',pseudoElement:dark?'::view-transition-new(root)':'::view-transition-old(root)'});}).catch(()=>{});
   t.finished.finally(()=>page.removeAttribute('data-shrinking'));});
-paintMode();start();
+paintMode();if(innerWidth<=640)setZoom(.8);start();
 </script>
 </body>
 </html>
