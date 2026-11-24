@@ -24,7 +24,7 @@ const UI = {
     updated: "آخر تحديث", none: "لا توجد وثيقة مطابقة.", open: "فتح الوثيقة", standalone: "تبويب مستقل",
     pick: "اختر وثيقة من القائمة", missing: "الصفحة غير موجودة", home: "العودة إلى الرئيسية",
     teamH: "الفريق", teamP: "اضغط أي بطاقة لترى صاحبها مرتديًا إياها، ومعها سيرته المهنية.", teamRoad: "الفريق كله على الطريق. اضغط أي عضو لفتح بطاقته.", showAll: "عرض كل الفريق", showCards: "العودة إلى البطاقات", orgRoot: "فريق أنظمة الطرق", edu: "التعليم", langs: "اللغات", demoTag: "بيانات تجريبية", cv: "السيرة المهنية", about: "نبذة", exp: "الخبرات", skills: "المهارات", contact: "التواصل", pending: "لم تُضف بيانات هذا العضو بعد.", flip: "اقلب البطاقة", dragHint: "أمسك البطاقة وحرّكها لتتأرجح · اضغطها لتقلبها", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
-    foot: "مرجع داخلي للفريق.",
+    foot: "مرجع داخلي للفريق.", aLang: "اللغة", aLook: "المظهر", aLight: "الوضع الفاتح", aDark: "الوضع الداكن", counts: (d, p) => `${d} وثائق · ${p} أعضاء`,
   },
   en: {
     brand: "Docs Hub", docs: "Docs", team: "Team",
@@ -38,7 +38,7 @@ const UI = {
     updated: "Updated", none: "No matching document.", open: "Open document", standalone: "Own tab",
     pick: "Pick a document from the list", missing: "Page not found", home: "Back to home",
     teamH: "The team", teamP: "Click a card to see its owner wearing it, with their professional profile.", teamRoad: "The whole team along the road. Click a member to open their card.", showAll: "Show the whole team", showCards: "Back to the cards", orgRoot: "Road Systems team", edu: "Education", langs: "Languages", demoTag: "Demo data", cv: "Professional profile", about: "Summary", exp: "Experience", skills: "Skills", contact: "Contact", pending: "Details for this member have not been added yet.", flip: "Flip the card", dragHint: "Grab the card and move it to swing it · click it to flip", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
-    foot: "Internal team reference.",
+    foot: "Internal team reference.", aLang: "Language", aLook: "Appearance", aLight: "Light mode", aDark: "Dark mode", counts: (d, p) => `${d} documents · ${p} people`,
   },
 };
 const other = (l) => (l === "ar" ? "en" : "ar");
@@ -68,17 +68,17 @@ function Nav({ lang, mode, onLang, onMode }) {
         <NavLink to="/team">{t.team}</NavLink>
       </div>
       <div className="tools">
-        <div className={"pill lang" + (lang === "ar" ? " is-ar" : "")} role="group" aria-label="Language">
+        <div className={"pill lang" + (lang === "ar" ? " is-ar" : "")} role="group" aria-label={t.aLang}>
           <span className="knob" />
           <button type="button" aria-pressed={lang === "en"} onClick={() => onLang("en")}>EN</button>
           <button type="button" aria-pressed={lang === "ar"} onClick={() => onLang("ar")}>ع</button>
         </div>
-        <div className={"pill theme" + (mode === "dark" ? " is-dark" : "")} role="group" aria-label="Appearance">
+        <div className={"pill theme" + (mode === "dark" ? " is-dark" : "")} role="group" aria-label={t.aLook}>
           <span className="knob" />
-          <button type="button" aria-label="Light" aria-pressed={mode === "light"} onClick={(e) => onMode("light", e.currentTarget)}>
+          <button type="button" aria-label={t.aLight} data-m="light" aria-pressed={mode === "light"} onClick={(e) => onMode("light", e.currentTarget)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5" /></svg>
           </button>
-          <button type="button" aria-label="Dark" aria-pressed={mode === "dark"} onClick={(e) => onMode("dark", e.currentTarget)}>
+          <button type="button" aria-label={t.aDark} data-m="dark" aria-pressed={mode === "dark"} onClick={(e) => onMode("dark", e.currentTarget)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg>
           </button>
         </div>
@@ -198,7 +198,7 @@ function Home({ lang }) {
         <div className="head"><div><h2>{t.team}</h2><p>{t.teamLead}</p></div><Link className="more" to="/team">{t.allTeam}<Arrow /></Link></div>
         <div className="crew">{TEAM.map((m) => (<Link key={m.id} to={"/team/" + m.id} className="member"><span className="mface" style={{ "--tone": m.tone }}><Photo m={m} /></span><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
       </section>
-      <footer className="foot"><span>{t.foot}</span><span className="mono">{DOCS.length} docs · {TEAM.length} people</span></footer>
+      <footer className="foot"><span>{t.foot}</span><span>{t.counts(DOCS.length, TEAM.length)}</span></footer>
     </div>
   );
 }
@@ -305,6 +305,8 @@ function Viewer({ lang, view, setView }) {
 
 const code = (i) => String(9750 + i * 7 + 3);
 const bars = (id) => [...id].map((c, i) => 1 + ((c.charCodeAt(0) + i * 7) % 4));
+const ORG = { ar: "أنظمة الطرق", en: "Road Systems" }, HUB = { ar: "مركز التوثيق", en: "Docs Hub" };
+const val = (v, lang) => (typeof v === "string" ? v : v[lang]);
 const period = (x, lang) => (lang === "en" && x.periodEn ? x.periodEn : x.period);
 
 /* An illustrated person in a suit. `crop` shows head and shoulders only, as a default portrait. */
@@ -362,29 +364,31 @@ const Roads = () => (
 );
 
 /* Card front, laid out like the Authority's employee ID: photo on the emblem, Arabic and English name, position, number. */
-function CardFront({ m, i }) {
+function CardFront({ m, i, lang }) {
+  const o = other(lang);
   return (
     <>
-      <span className="org"><b>أنظمة الطرق</b><span>Road Systems</span></span>
+      <span className="org" dir={lang === "ar" ? "rtl" : "ltr"}><b>{ORG[lang]}</b><span>{ORG[o]}</span></span>
       <span className="portrait" style={{ "--tone": m.tone }}><span className="arch"><Photo m={m} /></span><Roads /></span>
-      <b className="nar" lang="ar" dir="rtl">{m.name.ar}</b>
-      <span className="nen" lang="en" dir="ltr">{m.name.en}</span>
-      <b className="rar" lang="ar" dir="rtl">{m.role.ar}</b>
-      <span className="ren" lang="en" dir="ltr">{m.role.en}</span>
+      <b className="nar" lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>{m.name[lang]}</b>
+      <span className="nen" lang={o} dir={o === "ar" ? "rtl" : "ltr"}>{m.name[o]}</span>
+      <b className="rar" lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>{m.role[lang]}</b>
+      <span className="ren" lang={o} dir={o === "ar" ? "rtl" : "ltr"}>{m.role[o]}</span>
       <span className="idn mono">{code(i)}</span>
     </>
   );
 }
 
-function CardBack({ m, i }) {
+function CardBack({ m, i, lang }) {
+  const o = other(lang);
   return (
     <>
       <svg className="pat" viewBox="0 0 240 360" preserveAspectRatio="none" aria-hidden="true">
         <path d="M-10 250 L120 150 L250 250 V290 L120 190 L-10 290Z M-10 320 L120 220 L250 320 V360 L120 260 L-10 360Z" />
         <path className="g" d="M150 -10 L250 70 V100 L120 -10Z M200 -10 L250 30 V55 L170 -10Z" />
       </svg>
-      <span className="org"><b>مركز التوثيق</b><span>Docs Hub</span></span>
-      <span className="bk"><b lang="ar" dir="rtl">{m.name.ar}</b><span lang="en" dir="ltr">{m.name.en}</span></span>
+      <span className="org" dir={lang === "ar" ? "rtl" : "ltr"}><b>{HUB[lang]}</b><span>{HUB[o]}</span></span>
+      <span className="bk"><b lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>{m.name[lang]}</b><span lang={o} dir={o === "ar" ? "rtl" : "ltr"}>{m.name[o]}</span></span>
       <span className="bk2"><span className="mono">/team/{m.id}</span><span className="barcode" aria-hidden="true">{bars(m.id).map((w, k) => <i key={k} style={{ width: w + "px" }} />)}</span><span className="mono big">{code(i)}</span></span>
     </>
   );
@@ -392,7 +396,7 @@ function CardBack({ m, i }) {
 
 /* The member wearing the card. The card hangs on a real pendulum: grab it and it follows the hand, let go and it swings. */
 const REST = { x: 200, y: 404 }, ROPE = 152, ARM = 205;
-function Wearer({ m, i, t }) {
+function Wearer({ m, i, t, lang }) {
   const stage = useRef(null), hang = useRef(null), card = useRef(null), sL = useRef(null), sR = useRef(null), pL = useRef(null), pR = useRef(null);
   const sim = useRef(null);
   const female = m.gender === "f";
@@ -450,8 +454,8 @@ function Wearer({ m, i, t }) {
         <div className="card3d" ref={card} style={{ "--tone": m.tone }} role="button" tabIndex={0} aria-label={t.flip}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } }}
           onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-          <div className="cside front"><i className="slot" /><CardFront m={m} i={i} /></div>
-          <div className="cside back"><i className="slot" /><CardBack m={m} i={i} /></div>
+          <div className="cside front"><i className="slot" /><CardFront m={m} i={i} lang={lang} /></div>
+          <div className="cside back"><i className="slot" /><CardBack m={m} i={i} lang={lang} /></div>
         </div>
       </div>
       <div className="under">
@@ -486,13 +490,13 @@ function Cv({ m, i, lang, go }) {
             <ol className="tl">{m.experience.map((x, k) => (<li key={k}><b>{x.title[lang]}</b><small className="mono">{period(x, lang)}</small><span>{x.place[lang]}</span><p>{x.note[lang]}</p></li>))}</ol>
           </section>
           <section><h3>{t.edu}</h3>
-            <ol className="tl">{m.education.map((x, k) => (<li key={k}><b>{x.title[lang]}</b><small className="mono">{x.period}</small><span>{x.place[lang]}</span></li>))}</ol>
+            <ol className="tl">{m.education.map((x, k) => (<li key={k}><b>{x.title[lang]}</b><small className="mono">{period(x, lang)}</small><span>{x.place[lang]}</span></li>))}</ol>
           </section>
         </div>
         <aside>
           <section><h3>{t.skills}</h3><div className="bars">{m.skills.map((s) => (<div key={s.name}><span>{s.name}</span><i><u style={{ width: s.level + "%" }} /></i></div>))}</div></section>
           <section><h3>{t.langs}</h3><div className="kv">{m.languages.map((l, k) => (<div key={k}><span>{l.name[lang]}</span><b>{l.level[lang]}</b></div>))}</div></section>
-          <section><h3>{t.contact}</h3><div className="kv">{m.contact.map((c, k) => (<div key={k}><span>{c.label[lang]}</span><b className="mono">{c.value}</b></div>))}</div></section>
+          <section><h3>{t.contact}</h3><div className="kv">{m.contact.map((c, k) => (<div key={k}><span>{c.label[lang]}</span><b className={typeof c.value === "string" ? "mono" : ""}>{val(c.value, lang)}</b></div>))}</div></section>
         </aside>
       </div>
       <div className="pager"><button type="button" onClick={() => go(-1)}><Arrow />{t.prev}</button><span className="mono">{i + 1} / {TEAM.length}</span><button type="button" onClick={() => go(1)}>{t.next}<Arrow /></button></div>
@@ -526,7 +530,7 @@ function Badge({ m, i, lang }) {
   return (
     <div className="badge" ref={root} role="dialog" aria-modal="true" aria-label={m.name[lang]} onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
       <button type="button" className="x" onClick={close} aria-label={t.close}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
-      <Wearer key={m.id} m={m} i={i} t={t} />
+      <Wearer key={m.id} m={m} i={i} t={t} lang={lang} />
       <Cv m={m} i={i} lang={lang} go={go} />
     </div>
   );
@@ -580,7 +584,7 @@ function Team({ lang }) {
           <div className="people" style={{ "--n": TEAM.length }}>
             {TEAM.map((m, i) => (
               <Link key={m.id} to={"/team/" + m.id} className="pcard" style={{ "--tone": m.tone }} onPointerMove={lean} onPointerLeave={level} aria-label={m.name[lang]}>
-                <i className="slot" /><CardFront m={m} i={i} />
+                <i className="slot" /><CardFront m={m} i={i} lang={lang} />
               </Link>
             ))}
           </div>
