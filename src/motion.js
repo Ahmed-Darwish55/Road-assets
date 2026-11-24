@@ -64,3 +64,30 @@ export function pageTurn(el, toArabic, swap) {
     inn.onfinish = inn.oncancel = done;
   };
 }
+
+// A line draws itself from its start, like a road being laid.
+export function drawIn(paths, opts = {}) {
+  if (still) return;
+  [...paths].forEach((p, i) => {
+    const len = p.getTotalLength();
+    gsap.fromTo(p, { strokeDasharray: len, strokeDashoffset: len }, {
+      strokeDashoffset: 0, duration: opts.duration || 1.4, delay: (opts.delay || 0) + i * 0.12, ease: "power2.inOut",
+      onComplete: () => { p.style.strokeDasharray = ""; p.style.strokeDashoffset = ""; },
+    });
+  });
+}
+
+// Lines of a headline rise into place one after another.
+export function rise(els, delay = 0) {
+  if (still || !els.length) return;
+  gsap.fromTo(els, { yPercent: 110 }, { yPercent: 0, duration: 0.9, delay, stagger: 0.09, ease: "power4.out", clearProps: "transform" });
+}
+
+// Things below the fold open as they scroll into view.
+export function onReveal(els, play) {
+  if (still || !("IntersectionObserver" in window)) return () => {};
+  const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { io.unobserve(e.target); play(e.target); } }), { threshold: 0.18 });
+  [...els].forEach((el) => io.observe(el));
+  return () => io.disconnect();
+}
+export { gsap };

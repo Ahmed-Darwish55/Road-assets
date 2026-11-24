@@ -4,7 +4,9 @@ The team's documentation hub: classifications, integration references and guides
 
 | Link | Page |
 | --- | --- |
-| `/` | Hub: every page, searchable, by category |
+| `/` | Home |
+| `/docs` | Every document, as cards or as a sidebar list |
+| `/team` | The team and each member's role (edit `src/team.js`) |
 | `/road-assets-tree` | Road Assets Tree: 2 classifications, 12 families, 279 assets and components |
 | `/tomtom-travel-time` | Travel time between traffic counters with the TomTom Routing API |
 
@@ -57,7 +59,7 @@ The page is then live at `/<slug>` and appears on the hub. To add a category, ad
 
 مرجع الفريق: التصنيفات، مراجع التكامل، والأدلة، ولكل صفحة رابط ثابت.
 
-- `/` المركز: كل الصفحات مع بحث وتصنيف.
+- `/` الرئيسية، `/docs` كل الوثائق (بطاقات أو قائمة جانبية)، `/team` الفريق (يُعدَّل من `src/team.js`).
 - `/road-assets-tree` شجرة أصول الطرق.
 - `/tomtom-travel-time` زمن الرحلة بين العدادات عبر TomTom.
 
