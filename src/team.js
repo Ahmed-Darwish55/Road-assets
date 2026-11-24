@@ -9,7 +9,7 @@ const L = (ar, en) => ({ ar, en });
 const DEMO_CONTACT = (id) => [
   { label: L("البريد", "Email"), value: id + "@example.com" },
   { label: L("المكتب", "Office"), value: "+966 11 000 0000" },
-  { label: L("المدينة", "City"), value: "Riyadh" },
+  { label: L("المدينة", "City"), value: L("الرياض", "Riyadh") },
 ];
 const LANGS = [{ name: L("العربية", "Arabic"), level: L("اللغة الأم", "Native") }, { name: L("الإنجليزية", "English"), level: L("مهني", "Professional") }];
 
