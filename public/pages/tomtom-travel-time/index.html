@@ -141,6 +141,12 @@ html[dir="rtl"] .explain b{text-align:right}
 button.jline:hover{background:rgba(255,255,255,.07)}
 .jline[aria-pressed="true"]{background:rgba(185,156,22,.25);border-color:var(--gold)}
 
+.envline{display:flex;align-items:center;gap:0;white-space:nowrap}
+.envin{flex:1;min-width:0;width:auto;font-family:var(--mono);font-size:13px;color:var(--c-str);background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.3);border-radius:6px;padding:3px 8px;direction:ltr;text-align:left}
+.envin::placeholder{color:var(--c-com)}
+.envin:focus{border-color:var(--gold);box-shadow:none;outline:none}
+.copy[aria-pressed="true"]{background:var(--gold);color:#20292a;border-color:var(--gold)}
+
 /* results */
 .out{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
 .tile{background:var(--field);border:1px solid var(--line);border-radius:12px;padding:10px 14px;transition:translate .22s ease,box-shadow .22s ease}
@@ -261,7 +267,9 @@ footer{font-size:13.5px;color:var(--muted);margin-top:8px;padding-inline-start:6
   <div class="km"><div>1<small data-t="km">كم</small></div></div>
   <h2><span data-t="s1">المصادقة</span><small>key</small></h2>
   <p data-t="s1p">المصادقة عبر بارامتر الاستعلام <code>key</code> في كل طلب. المفتاح يُسلَّم للفريق خارج هذا المستند، ويُحقن وقت التشغيل من متغير بيئة أو مخزن أسرار، ولا يدخل المستودع.</p>
-  <div class="codebox"><div class="bar"><span>.env</span></div><pre><span class="k">TOMTOM_API_KEY</span>=<span class="s">********************************</span></pre></div>
+  <div class="codebox"><div class="bar"><span>.env</span><button class="copy" type="button" id="envshow" aria-pressed="false" data-t="kShow">إظهار</button><button class="copy" type="button" id="envcopy" data-t="kCopy">نسخ</button></div><pre class="envline"><label for="envkey"><span class="k">TOMTOM_API_KEY</span>=</label><input id="envkey" class="envin" type="password" autocomplete="off" spellcheck="false" placeholder="paste the key here"></pre></div>
+  <div class="err" id="enverr" role="alert"></div>
+  <p style="font-size:14px" data-t="kNote">المفتاح غير مخزَّن في هذه الصفحة. الصقه في الحقل أعلاه ليظهر في الرابط والكود بالأسفل. يبقى في متصفحك فقط ويُمسح عند إغلاق الصفحة.</p>
   <div class="note" data-t="s1n">يُفضّل أن يخرج الطلب من خدمة خلفية تحتفظ بالمفتاح وتخزّن النتيجة مؤقتًا، ثم تقرأ الواجهة منها. إرسال الطلب من المتصفح مباشرة يكشف المفتاح في حركة الشبكة ويضاعف الاستهلاك بعدد المستخدمين.</div>
 </section>
 
@@ -431,6 +439,7 @@ const EN={
  s2n:'<b>Map matching.</b> The service snaps each point to the nearest drivable road. A point on the opposite carriageway yields a route through the nearest U-turn, inflating <code>lengthInMeters</code> and the time. Validate by comparing route length with the geodesic distance, and use <code>vehicleHeading</code> where needed to pin the departure direction. The coordinates above are sample values.',
  s3:'Building the request',
  s3p:'These options are the ones that matter for travel time between two counters. The URL and the code update on every change, and clicking any part of the URL shows its description. All other parameters are in the reference in section 6.',
+ kShow:'Show',kCopy:'Copy',kNote:'The key is not stored in this page. Paste it in the field above and it appears in the URL and code below. It stays in your browser only and is cleared when the page closes.',
  cpUrl:'Copy URL',cpJson:'Copy sample',cpCode:'Copy code',tryH:'Running the request',
  tryP:'This page runs in a sandboxed frame and sends no network requests. Enter the key to generate a complete URL that opens in a separate tab, then paste the response in section 5. The key is not stored and does not leave this page.',
  open:'Open the request in a new tab',s4:'Response structure',
@@ -616,11 +625,21 @@ ${C('//   "fetchedAt": "2026-11-24T07:34:02.000Z", "stale": false }','//   "fetc
 ['alat','alon','blat','blon','mode','rtype','ctt','rep','depart','traffic','sect','apikey'].forEach(id=>{$(id).addEventListener('input',build);$(id).addEventListener('change',build);});
 $('url').addEventListener('click',e=>{const b=e.target.closest('.tok');if(!b)return;pickedU=b.dataset.id;build();reveal($('uex'));});
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{lang=t.dataset.lang;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===t)));build();}));
-document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',()=>{
+document.querySelectorAll('.copy[data-copy]').forEach(b=>b.addEventListener('click',()=>{
   const txt=b.dataset.copy==='url'?lastUrl:b.dataset.copy==='json'?J.map(l=>l[0].replace(/<[^>]+>/g,'')).join('\n'):$('code').textContent,old=b.innerHTML;
   const done=ok=>{b.textContent=ok?tr('تم النسخ','Copied'):tr('انسخ يدويًا','Copy manually');setTimeout(()=>b.innerHTML=old,1600);};
   try{navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false));}catch(x){done(false);}
 }));
+
+/* the key lives in one place: the .env line and the field in section 3 mirror each other */
+(function(){const e=$('envkey'),k=$('apikey'),sh=$('envshow'),cp=$('envcopy');
+  e.addEventListener('input',()=>{k.value=e.value;$('enverr').textContent='';build();});
+  k.addEventListener('input',()=>{e.value=k.value;});
+  sh.addEventListener('click',()=>{const on=e.type==='password';e.type=k.type=on?'text':'password';sh.setAttribute('aria-pressed',String(on));sh.textContent=on?tr('إخفاء','Hide'):tr('إظهار','Show');pop(sh);});
+  cp.addEventListener('click',()=>{pop(cp);if(!e.value.trim()){$('enverr').textContent=tr('الصق المفتاح في الحقل أولًا.','Paste the key in the field first.');e.focus();return;}
+    const old=tr('نسخ','Copy'),done=ok=>{cp.textContent=ok?tr('تم النسخ','Copied'):tr('انسخ يدويًا','Copy manually');setTimeout(()=>cp.textContent=old,1600);};
+    try{navigator.clipboard.writeText('TOMTOM_API_KEY='+e.value.trim()).then(()=>done(true),()=>done(false));}catch(x){done(false);}});
+})();
 
 /* response explorer */
 const J=[
@@ -869,7 +888,7 @@ function intro(){if(!anim)return;
   document.querySelectorAll('.stop').forEach(s=>io.observe(s));}
 
 /* everything that depends on language */
-function start(first){texts();hero();build();drawJ();calc();quota();drawRef();if(!first&&anim){bloom(document.querySelectorAll('.jump a'),.05);document.querySelectorAll('.km').forEach((k,i)=>gsap.fromTo(k,{scale:.3},{scale:1,duration:.6,delay:i*.05,ease:'back.out(1.7)',clearProps:'transform'}));}}
+function start(first){texts();if($('envkey').type==='text')$('envshow').textContent=tr('إخفاء','Hide');hero();build();drawJ();calc();quota();drawRef();if(!first&&anim){bloom(document.querySelectorAll('.jump a'),.05);document.querySelectorAll('.km').forEach((k,i)=>gsap.fromTo(k,{scale:.3},{scale:1,duration:.6,delay:i*.05,ease:'back.out(1.7)',clearProps:'transform'}));}}
 
 /* switching language turns the whole page over like a leaf of a book */
 let turning=false;
