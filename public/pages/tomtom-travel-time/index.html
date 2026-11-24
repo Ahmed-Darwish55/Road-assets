@@ -272,7 +272,7 @@ footer{font-size:13.5px;color:var(--muted);margin-top:8px;padding-inline-start:6
   <div class="km"><div>4<small data-t="km">كم</small></div></div>
   <h2><span data-t="s4">بنية الرد</span><small>200 application/json</small></h2>
   <p data-t="s4p">المؤشرات تُقرأ من <code>routes[0].summary</code>. مع <code>sectionType=traffic</code> يتضمن الرد مصفوفة <code>sections</code> بحوادث المرور على المسار. القيم أدناه توضيحية. اضغط أي سطر لعرض وصف الحقل.</p>
-  <div class="codebox"><div class="bar"><span data-t="sample">نموذج رد</span></div><pre id="json"></pre></div>
+  <div class="codebox"><div class="bar"><span data-t="sample">نموذج رد</span><button class="copy" type="button" data-copy="json" data-t="cpJson">نسخ النموذج</button></div><pre id="json"></pre></div>
   <div class="explain" id="jex" aria-live="polite"></div>
 </section>
 
@@ -357,7 +357,7 @@ const EN={
  s2n:'<b>Map matching.</b> The service snaps each point to the nearest drivable road. A point on the opposite carriageway yields a route through the nearest U-turn, inflating <code>lengthInMeters</code> and the time. Validate by comparing route length with the geodesic distance, and use <code>vehicleHeading</code> where needed to pin the departure direction. The coordinates above are sample values.',
  s3:'Building the request',
  s3p:'These options are the ones that matter for travel time between two counters. The URL and the code update on every change, and clicking any part of the URL shows its description. All other parameters are in the reference in section 6.',
- cpUrl:'Copy URL',cpCode:'Copy code',tryH:'Running the request',
+ cpUrl:'Copy URL',cpJson:'Copy sample',cpCode:'Copy code',tryH:'Running the request',
  tryP:'This page runs in a sandboxed frame and sends no network requests. Enter the key to generate a complete URL that opens in a separate tab, then paste the response in section 5. The key is not stored and does not leave this page.',
  open:'Open the request in a new tab',s4:'Response structure',
  s4p:'The indicators are read from <code>routes[0].summary</code>. With <code>sectionType=traffic</code> the response includes a <code>sections</code> array of traffic incidents on the route. The values below are illustrative. Click any line for the field description.',
@@ -542,7 +542,7 @@ ${C('//   "fetchedAt": "2026-11-24T07:34:02.000Z", "stale": false }','//   "fetc
 $('url').addEventListener('click',e=>{const b=e.target.closest('.tok');if(!b)return;pickedU=b.dataset.id;build();reveal($('uex'));});
 document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{lang=t.dataset.lang;document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===t)));build();}));
 document.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',()=>{
-  const txt=b.dataset.copy==='url'?lastUrl:$('code').textContent,old=b.innerHTML;
+  const txt=b.dataset.copy==='url'?lastUrl:b.dataset.copy==='json'?J.map(l=>l[0].replace(/<[^>]+>/g,'')).join('\n'):$('code').textContent,old=b.innerHTML;
   const done=ok=>{b.textContent=ok?tr('تم النسخ','Copied'):tr('انسخ يدويًا','Copy manually');setTimeout(()=>b.innerHTML=old,1600);};
   try{navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false));}catch(x){done(false);}
 }));
@@ -563,7 +563,7 @@ const J=[
  ['      <span class="k">"historicTrafficTravelTimeInSeconds"</span>: <span class="n">287</span>,','ht'],
  ['      <span class="k">"liveTrafficIncidentsTravelTimeInSeconds"</span>: <span class="n">312</span>','lt'],
  ['    },',null],
- ['    <span class="k">"legs"</span>: [{ <span class="k">"summary"</span>: { … } }],','legs'],
+ ['    <span class="k">"legs"</span>: [{ <span class="k">"summary"</span>: { <span class="k">"lengthInMeters"</span>: <span class="n">4120</span>, <span class="k">"travelTimeInSeconds"</span>: <span class="n">312</span> } }],','legs'],
  ['    <span class="k">"sections"</span>: [{','sec'],
  ['      <span class="k">"sectionType"</span>: <span class="s">"TRAFFIC"</span>,','sty'],
  ['      <span class="k">"simpleCategory"</span>: <span class="s">"JAM"</span>,','cat'],
