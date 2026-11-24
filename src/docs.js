@@ -10,7 +10,8 @@ export const CATEGORIES = {
   assets: { ar: "الأصول", en: "Assets", color: "var(--b-net)" },
   integrations: { ar: "التكاملات", en: "Integrations", color: "var(--b-pav)" },
   design: { ar: "التصميم", en: "Design", color: "var(--b-oth)" },
-  guides: { ar: "أدلة", en: "Guides", color: "var(--b-str)" },
+  maps: { ar: "الخرائط", en: "Maps", color: "var(--b-str)" },
+  guides: { ar: "أدلة", en: "Guides", color: "var(--b-all)" },
 };
 
 export const DOCS = [
@@ -39,6 +40,19 @@ export const DOCS = [
     updated: "2026-11-24",
     src: "/pages/tomtom-travel-time/index.html",
     sync: { modeKey: "tt-docs-mode", langKey: "tt-docs-lang" },
+  },
+  {
+    slug: "admin-boundaries-map",
+    category: "maps",
+    icon: "map",
+    title: { ar: "خريطة التقسيمات الإدارية", en: "Administrative Boundaries Map" },
+    summary: {
+      ar: "مناطق المملكة الـ13، ثم المنطقة الشرقية بالتفصيل: المحافظات، المدن، الأمانات، البلديات، والأحياء.",
+      en: "The Kingdom's 13 regions, then the Eastern Province in detail: governorates, cities, amanas, municipalities and districts.",
+    },
+    updated: "2026-11-24",
+    src: "/pages/admin-boundaries-map/index.html",
+    sync: { modeKey: "ab-mode", langKey: "ab-lang" },
   },
 ];
 

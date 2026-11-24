@@ -9,6 +9,7 @@ The team's documentation hub: classifications, integration references and guides
 | `/team` | The team and each member's role (edit `src/team.js`) |
 | `/road-assets-tree` | Road Assets Tree: 2 classifications, 12 families, 279 assets and components |
 | `/tomtom-travel-time` | Travel time between traffic counters with the TomTom Routing API |
+| `/admin-boundaries-map` | Administrative boundaries map: the 13 regions and the Eastern Province in detail |
 
 Arabic and English, light and dark. The hub passes its language and theme to each page.
 
