@@ -23,7 +23,7 @@ const UI = {
     search: "ابحث في الوثائق…", all: "الكل", cards: "بطاقات", sidebar: "قائمة جانبية", view: "طريقة العرض",
     updated: "آخر تحديث", none: "لا توجد وثيقة مطابقة.", open: "فتح الوثيقة", standalone: "تبويب مستقل",
     pick: "اختر وثيقة من القائمة", missing: "الصفحة غير موجودة", home: "العودة إلى الرئيسية",
-    teamH: "الفريق", teamP: "اضغط أي بطاقة لترى بطاقة التعريف والتفاصيل.", cv: "السيرة المهنية", about: "نبذة", exp: "الخبرات", skills: "المهارات", contact: "التواصل", pending: "لم تُضف بيانات هذا العضو بعد.", flip: "اقلب البطاقة", dragHint: "اسحب البطاقة لتدويرها، أو اضغطها لتقلبها", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
+    teamH: "الفريق", teamP: "اضغط أي بطاقة لترى صاحبها مرتديًا إياها، ومعها سيرته المهنية.", teamRoad: "الفريق كله على الطريق. اضغط أي عضو لفتح بطاقته.", showAll: "عرض كل الفريق", showCards: "العودة إلى البطاقات", orgRoot: "فريق أنظمة الطرق", edu: "التعليم", langs: "اللغات", demoTag: "بيانات تجريبية", cv: "السيرة المهنية", about: "نبذة", exp: "الخبرات", skills: "المهارات", contact: "التواصل", pending: "لم تُضف بيانات هذا العضو بعد.", flip: "اقلب البطاقة", dragHint: "أمسك البطاقة وحرّكها لتتأرجح · اضغطها لتقلبها", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
     foot: "مرجع داخلي للفريق.",
   },
   en: {
@@ -37,7 +37,7 @@ const UI = {
     search: "Search the docs…", all: "All", cards: "Cards", sidebar: "Sidebar", view: "View",
     updated: "Updated", none: "No matching document.", open: "Open document", standalone: "Own tab",
     pick: "Pick a document from the list", missing: "Page not found", home: "Back to home",
-    teamH: "The team", teamP: "Click any card to see the badge and the details.", cv: "Professional profile", about: "Summary", exp: "Experience", skills: "Skills", contact: "Contact", pending: "Details for this member have not been added yet.", flip: "Flip the card", dragHint: "Drag the card to turn it, or click it to flip", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
+    teamH: "The team", teamP: "Click a card to see its owner wearing it, with their professional profile.", teamRoad: "The whole team along the road. Click a member to open their card.", showAll: "Show the whole team", showCards: "Back to the cards", orgRoot: "Road Systems team", edu: "Education", langs: "Languages", demoTag: "Demo data", cv: "Professional profile", about: "Summary", exp: "Experience", skills: "Skills", contact: "Contact", pending: "Details for this member have not been added yet.", flip: "Flip the card", dragHint: "Grab the card and move it to swing it · click it to flip", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
     foot: "Internal team reference.",
   },
 };
@@ -106,15 +106,6 @@ function Sign({ doc, lang, compact }) {
       <span className="posts" aria-hidden="true"><i /><i /></span>
       <span className="sr">{t.updated} {doc.updated}</span>
     </Link>
-  );
-}
-
-/* A portrait, or the member's initials on their colour when no photo has been added. */
-function Face({ m, className = "" }) {
-  return (
-    <span className={"face " + className} style={{ "--tone": m.tone }}>
-      {m.photo ? <img src={m.photo} alt="" loading="lazy" /> : <i aria-hidden="true">{m.mark}</i>}
-    </span>
   );
 }
 
@@ -205,7 +196,7 @@ function Home({ lang }) {
 
       <section className="band reveal">
         <div className="head"><div><h2>{t.team}</h2><p>{t.teamLead}</p></div><Link className="more" to="/team">{t.allTeam}<Arrow /></Link></div>
-        <div className="crew">{TEAM.map((m) => (<Link key={m.id} to={"/team/" + m.id} className="member"><Face m={m} /><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
+        <div className="crew">{TEAM.map((m) => (<Link key={m.id} to={"/team/" + m.id} className="member"><span className="mface" style={{ "--tone": m.tone }}><Photo m={m} /></span><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
       </section>
       <footer className="foot"><span>{t.foot}</span><span className="mono">{DOCS.length} docs · {TEAM.length} people</span></footer>
     </div>
@@ -314,6 +305,52 @@ function Viewer({ lang, view, setView }) {
 
 const code = (i) => String(9750 + i * 7 + 3);
 const bars = (id) => [...id].map((c, i) => 1 + ((c.charCodeAt(0) + i * 7) % 4));
+const period = (x, lang) => (lang === "en" && x.periodEn ? x.periodEn : x.period);
+
+/* An illustrated person in a suit. `crop` shows head and shoulders only, as a default portrait. */
+function Person({ female, crop, collar = true, className = "" }) {
+  const box = crop ? (female ? "96 22 208 260" : "88 14 224 280") : "0 0 400 620";
+  return (
+    <svg className={"person " + className} viewBox={box} preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+      <defs>
+        <linearGradient id="pg-suit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a4a45" /><stop offset="1" stopColor="#222c29" /></linearGradient>
+        <linearGradient id="pg-skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#ecc4a3" /><stop offset="1" stopColor="#d6a580" /></linearGradient>
+      </defs>
+      {female ? (
+        <>
+          <path fill="#33241d" d="M116 152c0-76 36-120 84-120s84 44 84 120v126c0 20-12 32-26 32H142c-14 0-26-12-26-32z" />
+          <path fill="url(#pg-suit)" d="M54 620V388c0-48 34-76 80-90l40-14 26 100 26-100 40 14c46 14 80 42 80 90v232z" />
+          <path fill="#f6efe2" d="M172 272l28 112 28-112-8-26h-40z" />
+          <path fill="url(#pg-skin)" d="M180 196h40v48c0 13-9 23-20 23s-20-10-20-23z" />
+          <path fill="#000" opacity=".12" d="M180 214c12 13 28 13 40 0v-18h-40z" />
+          <path fill="#1b2421" d="M168 272l32 112-50-56c-4-22 4-42 18-56zM232 272l-32 112 50-56c4-22-4-42-18-56z" />
+          <path fill="url(#pg-skin)" d="M200 52c36 0 56 26 56 66v14c0 44-25 78-56 78s-56-34-56-78v-14c0-40 20-66 56-66z" />
+          <path fill="#33241d" d="M142 140c-8-60 20-98 58-98s66 36 58 98c-8-32-30-54-62-60-10 24-30 46-54 60z" />
+          <circle cx="146" cy="340" r="6" fill="#e3c64a" />
+          <path fill="none" stroke="#000" strokeWidth="2" opacity=".14" d="M92 620V440M308 620V440" />
+        </>
+      ) : (
+        <>
+          <path fill="url(#pg-suit)" d="M34 620V372c0-52 38-82 90-96l46-14 30 96 30-96 46 14c52 14 90 44 90 96v248z" />
+          <path fill="#f7f8f7" d="M168 262l32 96 32-96-10-24h-44z" />
+          <path fill="url(#pg-skin)" d="M176 194h48v46c0 14-11 24-24 24s-24-10-24-24z" />
+          <path fill="#000" opacity=".13" d="M176 214c14 14 34 14 48 0v-20h-48z" />
+          <path fill="#4D7F71" d="M190 266h20l-5 18h-10z" /><path fill="#44705f" d="M190 286h20l8 78-18 22-18-22z" /><path fill="#e3c64a" d="M187 322l26-9 1 10-27 9z" />
+          <path fill="#1b2421" d="M164 262l36 96-54-46 10-20-18-10zM236 262l-36 96 54-46-10-20 18-10z" />
+          {collar && <path fill="#fff" stroke="#d5d9d8" strokeWidth="1.2" strokeLinejoin="round" d="M178 238l22 30-28 18-8-36zM222 238l-22 30 28 18 8-36z" />}
+          <path fill="#e3c64a" d="M258 410l10-12 8 9 9-10 9 13z" /><path fill="none" stroke="#000" strokeWidth="2" opacity=".2" d="M256 410h40" />
+          <ellipse cx="137" cy="140" rx="9" ry="15" fill="#d6a580" /><ellipse cx="263" cy="140" rx="9" ry="15" fill="#d6a580" />
+          <path fill="url(#pg-skin)" d="M200 44c40 0 62 28 62 70v16c0 46-28 80-62 80s-62-34-62-80v-16c0-42 22-70 62-70z" />
+          <path fill="#26201e" d="M138 130c-8-60 22-96 62-96s70 36 62 96c-4-26-12-40-24-48-24 10-58 8-78-2-12 10-18 24-22 50z" />
+          <path fill="none" stroke="#000" strokeWidth="2" opacity=".16" d="M74 620V430M326 620V430" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/* The member's photo, or the default illustrated portrait. */
+const Photo = ({ m }) => (m.photo ? <img src={m.photo} alt="" loading="lazy" /> : <Person female={m.gender === "f"} crop />);
 
 /* The lower part of the emblem: two road bands crossing, as on the Authority's employee card. */
 const Roads = () => (
@@ -323,74 +360,149 @@ const Roads = () => (
   </svg>
 );
 
-/* Portrait over the crossing roads. Without a photo, the member's initials stand in. */
-function Portrait({ m }) {
-  return (
-    <span className="portrait" style={{ "--tone": m.tone }}>
-      <span className="arch">{m.photo ? <img src={m.photo} alt="" loading="lazy" /> : <i aria-hidden="true">{m.mark}</i>}</span>
-      <Roads />
-    </span>
-  );
-}
-
 /* Card front, laid out like the Authority's employee ID: photo on the emblem, Arabic and English name, position, number. */
 function CardFront({ m, i }) {
   return (
     <>
       <span className="org"><b>أنظمة الطرق</b><span>Road Systems</span></span>
-      <Portrait m={m} />
+      <span className="portrait" style={{ "--tone": m.tone }}><span className="arch"><Photo m={m} /></span><Roads /></span>
       <b className="nar" lang="ar" dir="rtl">{m.name.ar}</b>
       <span className="nen" lang="en" dir="ltr">{m.name.en}</span>
-      <b className="rar" lang="ar" dir="rtl">{m.role.ar || "عضو الفريق"}</b>
-      <span className="ren" lang="en" dir="ltr">{m.role.en || "Team member"}</span>
+      <b className="rar" lang="ar" dir="rtl">{m.role.ar}</b>
+      <span className="ren" lang="en" dir="ltr">{m.role.en}</span>
       <span className="idn mono">{code(i)}</span>
     </>
   );
 }
 
-/* A real two-sided card: drag to turn it, click to flip it. */
-function Card3D({ m, i, t }) {
-  const card = useRef(null), ang = useRef(0), drag = useRef(null);
-  const to = (a, spring) => { ang.current = a; if (still || !spring) gsap.set(card.current, { rotationY: a }); else gsap.to(card.current, { rotationY: a, rotationX: 0, duration: 1, ease: "back.out(1.5)", overwrite: true }); };
-  const flip = () => to(Math.round(ang.current / 180) * 180 + 180, true);
-  useEffect(() => { gsap.set(card.current, { rotationX: 0 }); to(0, false); }, [m.id]);
-  const down = (e) => { gsap.killTweensOf(card.current); gsap.set(card.current, { rotationX: 0 }); drag.current = { x: e.clientX, a: ang.current, moved: 0, now: ang.current }; e.currentTarget.setPointerCapture(e.pointerId); };
-  const move = (e) => {
-    const d = drag.current, r = e.currentTarget.getBoundingClientRect();
-    if (d) { const dx = e.clientX - d.x; d.moved = Math.max(d.moved, Math.abs(dx)); d.now = d.a + dx * 0.8; gsap.set(card.current, { rotationY: d.now }); return; }
-    if (!still && e.pointerType === "mouse") gsap.to(card.current, { rotationX: (0.5 - (e.clientY - r.top) / r.height) * 12, rotationY: ang.current + ((e.clientX - r.left) / r.width - 0.5) * 16, duration: 0.3, overwrite: true });
-  };
-  const up = () => { const d = drag.current; drag.current = null; if (!d) return; if (d.moved < 6) flip(); else to(Math.round(d.now / 180) * 180, true); };
-  const leave = () => { if (!drag.current && !still) gsap.to(card.current, { rotationX: 0, rotationY: ang.current, duration: 0.5, overwrite: true }); };
-  const key = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } };
+function CardBack({ m, i }) {
   return (
     <>
-      <div className="card3d" ref={card} style={{ "--tone": m.tone }} role="button" tabIndex={0} aria-label={t.flip} onKeyDown={key}
-        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={leave}>
-        <div className="cside front"><i className="slot" /><CardFront m={m} i={i} /></div>
-        <div className="cside back">
-          <i className="slot" />
-          <svg className="pat" viewBox="0 0 240 360" preserveAspectRatio="none" aria-hidden="true">
-            <path d="M-10 250 L120 150 L250 250 V290 L120 190 L-10 290Z M-10 320 L120 220 L250 320 V360 L120 260 L-10 360Z" />
-            <path className="g" d="M150 -10 L250 70 V100 L120 -10Z M200 -10 L250 30 V55 L170 -10Z" />
-          </svg>
-          <span className="org"><b>مركز التوثيق</b><span>Docs Hub</span></span>
-          <span className="bk"><b lang="ar" dir="rtl">{m.name.ar}</b><span lang="en" dir="ltr">{m.name.en}</span></span>
-          <span className="bk2"><span className="mono">/team/{m.id}</span><span className="barcode" aria-hidden="true">{bars(m.id).map((w, k) => <i key={k} style={{ width: w + "px" }} />)}</span><span className="mono big">{code(i)}</span></span>
-        </div>
-      </div>
-      <button type="button" className="flipbtn" onClick={(e) => { flip(); pop(e.currentTarget); }}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3M20 15a8 8 0 0 1-14 3M18 2v4h-4M6 22v-4h4" /></svg>{t.flip}
-      </button>
+      <svg className="pat" viewBox="0 0 240 360" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-10 250 L120 150 L250 250 V290 L120 190 L-10 290Z M-10 320 L120 220 L250 320 V360 L120 260 L-10 360Z" />
+        <path className="g" d="M150 -10 L250 70 V100 L120 -10Z M200 -10 L250 30 V55 L170 -10Z" />
+      </svg>
+      <span className="org"><b>مركز التوثيق</b><span>Docs Hub</span></span>
+      <span className="bk"><b lang="ar" dir="rtl">{m.name.ar}</b><span lang="en" dir="ltr">{m.name.en}</span></span>
+      <span className="bk2"><span className="mono">/team/{m.id}</span><span className="barcode" aria-hidden="true">{bars(m.id).map((w, k) => <i key={k} style={{ width: w + "px" }} />)}</span><span className="mono big">{code(i)}</span></span>
     </>
   );
 }
 
-/* The member wearing the card on a lanyard, with a CV sheet beside it. */
+/* The member wearing the card. The card hangs on a real pendulum: grab it and it follows the hand, let go and it swings. */
+const REST = { x: 200, y: 404 }, ROPE = 152, ARM = 205;
+function Wearer({ m, i, t }) {
+  const stage = useRef(null), hang = useRef(null), card = useRef(null), sL = useRef(null), sR = useRef(null), pL = useRef(null), pR = useRef(null);
+  const sim = useRef(null);
+  const female = m.gender === "f";
+  const NL = female ? { x: 181, y: 250 } : { x: 172, y: 258 }, NR = female ? { x: 219, y: 250 } : { x: 228, y: 258 };
+  const flip = () => { const s = sim.current; const next = Math.round(s.flip.a / 180) * 180 + 180; if (still) { s.flip.a = next; s.draw(); } else gsap.to(s.flip, { a: next, duration: 0.95, ease: "back.out(1.5)", overwrite: true }); };
+  useEffect(() => {
+    const A = { x: 200, y: REST.y - ROPE };
+    const s = { h: { x: 96, y: 300, px: 90, py: 296 }, c: { x: -20, y: 420, px: -24, py: 418 }, drag: null, yaw: 0, pitch: 0, flip: { a: 0 } };
+    if (still) { s.h = { x: REST.x, y: REST.y, px: REST.x, py: REST.y }; s.c = { x: REST.x, y: REST.y + ARM, px: REST.x, py: REST.y + ARM }; }
+    const strap = (n, h) => { const d = Math.hypot(h.x - n.x, h.y - n.y), slack = Math.max(0, ROPE + 6 - d); return `M${n.x} ${n.y} Q${(n.x + h.x) / 2 + (n.x < 200 ? -1 : 1) * slack * 0.35} ${(n.y + h.y) / 2 + slack * 0.6} ${h.x} ${h.y}`; };
+    s.draw = () => {
+      const { h, c } = s, rot = (-Math.atan2(c.x - h.x, c.y - h.y) * 180) / Math.PI;
+      hang.current.style.transform = `translate(${(h.x - REST.x).toFixed(2)}px,${(h.y - REST.y).toFixed(2)}px) rotate(${rot.toFixed(2)}deg)`;
+      card.current.style.transform = `rotateX(${s.pitch.toFixed(2)}deg) rotateY(${(s.flip.a + s.yaw).toFixed(2)}deg)`;
+      const dl = strap(NL, h), dr = strap(NR, h);
+      sL.current.setAttribute("d", dl); pL.current.setAttribute("d", dl); sR.current.setAttribute("d", dr); pR.current.setAttribute("d", dr);
+    };
+    const tick = () => {
+      for (const p of [s.h, s.c]) { const vx = (p.x - p.px) * 0.986, vy = (p.y - p.py) * 0.986; p.px = p.x; p.py = p.y; p.x += vx; p.y += vy + 0.62; }
+      if (s.drag) { s.h.x = s.drag.x; s.h.y = s.drag.y; }
+      for (let k = 0; k < 6; k++) {
+        let dx = s.h.x - A.x, dy = s.h.y - A.y, d = Math.hypot(dx, dy) || 1;
+        if (d > ROPE) { s.h.x = A.x + (dx / d) * ROPE; s.h.y = A.y + (dy / d) * ROPE; }
+        dx = s.c.x - s.h.x; dy = s.c.y - s.h.y; d = Math.hypot(dx, dy) || 1; const f = (d - ARM) / d;
+        if (s.drag) { s.c.x -= dx * f; s.c.y -= dy * f; } else { s.h.x += dx * f * 0.55; s.h.y += dy * f * 0.55; s.c.x -= dx * f * 0.45; s.c.y -= dy * f * 0.45; }
+      }
+      const vx = s.c.x - s.c.px, vy = s.c.y - s.c.py;
+      s.yaw += (Math.max(-42, Math.min(42, vx * 3.2)) - s.yaw) * 0.14; s.pitch += (Math.max(-16, Math.min(16, -vy * 1.6)) - s.pitch) * 0.14;
+      s.draw();
+    };
+    sim.current = s; s.draw();
+    if (still) return;
+    gsap.fromTo(stage.current.querySelector(".person"), { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out", clearProps: "transform" });
+    gsap.ticker.add(tick);
+    return () => { gsap.ticker.remove(tick); gsap.killTweensOf(s.flip); };
+  }, [m.id]);
+  const pt = (e) => { const r = stage.current.getBoundingClientRect(), k = 400 / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; };
+  const down = (e) => { const p = pt(e), s = sim.current; s.drag = { ox: p.x - s.h.x, oy: p.y - s.h.y, x: s.h.x, y: s.h.y, sx: e.clientX, sy: e.clientY, moved: 0 }; e.currentTarget.setPointerCapture(e.pointerId); };
+  const move = (e) => { const s = sim.current, d = s.drag; if (!d) return; const p = pt(e); d.x = p.x - d.ox; d.y = p.y - d.oy; d.moved = Math.max(d.moved, Math.hypot(e.clientX - d.sx, e.clientY - d.sy)); };
+  const up = () => { const s = sim.current, d = s.drag; s.drag = null; if (d && d.moved < 6) flip(); };
+  return (
+    <div className="stage" ref={stage}>
+      <Person female={female} collar={false} className="figure" />
+      <svg className="straps" viewBox="0 0 400 940" aria-hidden="true">
+        <defs><linearGradient id="st-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#3b6659" /><stop offset=".5" stopColor="#5a8f80" /><stop offset="1" stopColor="#3b6659" /></linearGradient></defs>
+        <path ref={sL} className="ribbon" /><path ref={pL} className="print" /><path ref={sR} className="ribbon" /><path ref={pR} className="print" />
+        {!female && <path fill="#fff" stroke="#d5d9d8" strokeWidth="1.2" strokeLinejoin="round" d="M178 238l22 30-28 18-8-36zM222 238l-22 30 28 18 8-36z" />}
+        {female && <path fill="#1b2421" d="M168 272l14 50-10-56zM232 272l-14 50 10-56z" opacity="0" />}
+      </svg>
+      <div className="hang" ref={hang}>
+        <svg className="hook" viewBox="0 0 36 46" aria-hidden="true">
+          <rect x="6" y="0" width="24" height="14" rx="3" fill="#3b6659" /><circle cx="18" cy="20" r="7" fill="none" stroke="#B99C16" strokeWidth="4" />
+          <path d="M18 27v5M11 32h14v5a7 7 0 0 1-14 0z" fill="none" stroke="#B99C16" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <div className="card3d" ref={card} style={{ "--tone": m.tone }} role="button" tabIndex={0} aria-label={t.flip}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } }}
+          onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+          <div className="cside front"><i className="slot" /><CardFront m={m} i={i} /></div>
+          <div className="cside back"><i className="slot" /><CardBack m={m} i={i} /></div>
+        </div>
+      </div>
+      <div className="under">
+        <button type="button" className="flipbtn" onClick={(e) => { flip(); pop(e.currentTarget); }}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3M20 15a8 8 0 0 1-14 3M18 2v4h-4M6 22v-4h4" /></svg>{t.flip}
+        </button>
+        <p className="hint">{t.dragHint}</p>
+      </div>
+    </div>
+  );
+}
+
+/* The CV sheet beside the figure. */
+function Cv({ m, i, lang, go }) {
+  const t = UI[lang];
+  return (
+    <article className="cv" style={{ "--tone": m.tone }}>
+      <header>
+        <svg className="pat" viewBox="0 0 400 120" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><path d="M250 -20 L330 60 L250 140 H290 L370 60 L290 -20Z M320 -20 L400 60 L320 140 H360 L440 60 L360 -20Z" /></svg>
+        <span className="cvphoto"><Photo m={m} /></span>
+        <div>
+          <span className="eyebrow">{t.cv} · <span className="mono">{code(i)}</span>{m.demo && <i className="demo">{t.demoTag}</i>}</span>
+          <h2>{m.name[lang]}</h2>
+          <span className="alt" lang={other(lang)}>{m.name[other(lang)]}</span>
+          <p className="role">{m.role[lang]}</p>
+        </div>
+      </header>
+      <div className="cvbody">
+        <div className="main">
+          <section><h3>{t.about}</h3><p>{m.summary[lang]}</p></section>
+          <section><h3>{t.exp}</h3>
+            <ol className="tl">{m.experience.map((x, k) => (<li key={k}><b>{x.title[lang]}</b><small className="mono">{period(x, lang)}</small><span>{x.place[lang]}</span><p>{x.note[lang]}</p></li>))}</ol>
+          </section>
+          <section><h3>{t.edu}</h3>
+            <ol className="tl">{m.education.map((x, k) => (<li key={k}><b>{x.title[lang]}</b><small className="mono">{x.period}</small><span>{x.place[lang]}</span></li>))}</ol>
+          </section>
+        </div>
+        <aside>
+          <section><h3>{t.skills}</h3><div className="bars">{m.skills.map((s) => (<div key={s.name}><span>{s.name}</span><i><u style={{ width: s.level + "%" }} /></i></div>))}</div></section>
+          <section><h3>{t.langs}</h3><div className="kv">{m.languages.map((l, k) => (<div key={k}><span>{l.name[lang]}</span><b>{l.level[lang]}</b></div>))}</div></section>
+          <section><h3>{t.contact}</h3><div className="kv">{m.contact.map((c, k) => (<div key={k}><span>{c.label[lang]}</span><b className="mono">{c.value}</b></div>))}</div></section>
+        </aside>
+      </div>
+      <div className="pager"><button type="button" onClick={() => go(-1)}><Arrow />{t.prev}</button><span className="mono">{i + 1} / {TEAM.length}</span><button type="button" onClick={() => go(1)}>{t.next}<Arrow /></button></div>
+    </article>
+  );
+}
+
 function Badge({ m, i, lang }) {
   const t = UI[lang];
   const nav = useNavigate();
-  const root = useRef(null), hang = useRef(null);
+  const root = useRef(null);
   const go = (d) => nav("/team/" + TEAM[(i + d + TEAM.length) % TEAM.length].id, { replace: true });
   const close = () => nav("/team");
   useEffect(() => {
@@ -399,75 +511,22 @@ function Badge({ m, i, lang }) {
     const prev = document.body.style.overflow; document.body.style.overflow = "hidden";
     return () => { removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
   }, [m.id, lang]);
+  useLayoutEffect(() => {
+    const fit = () => { const st = root.current.querySelector(".stage"); st.style.zoom = innerWidth <= 900 ? "" : Math.max(0.5, Math.min(1, (innerHeight - 70) / 940)).toFixed(3); };
+    fit(); addEventListener("resize", fit); return () => removeEventListener("resize", fit);
+  }, [m.id]);
   useEffect(() => {
     if (still) return;
-    const el = root.current, h = hang.current;
-    const tl = gsap.timeline();
-    tl.fromTo(el.querySelector(".figure"), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 0)
-      .fromTo(h, { rotation: -22, y: -80, opacity: 0 }, { rotation: 0, y: 0, opacity: 1, duration: 1.7, ease: "elastic.out(1,0.34)" }, 0.25)
-      .fromTo(el.querySelector(".cv"), { opacity: 0, x: lang === "ar" ? -40 : 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out", clearProps: "transform" }, 0.3)
-      .fromTo(el.querySelectorAll(".cv section,.cv .pager"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power2.out", clearProps: "transform,opacity" }, 0.6);
-    const sway = gsap.to(h, { rotation: 1.4, duration: 2.8, yoyo: true, repeat: -1, ease: "sine.inOut", delay: 2.2 });
-    return () => { tl.kill(); sway.kill(); };
-  }, [m.id]);
-  useLayoutEffect(() => {
-    const fit = () => { const st = root.current.querySelector(".stage"); st.style.zoom = innerWidth <= 900 ? "" : Math.max(0.55, Math.min(1, (innerHeight - 84) / 900)).toFixed(3); };
-    fit(); addEventListener("resize", fit); return () => removeEventListener("resize", fit);
-  }, []);
-  const exp = m.experience, skills = m.skills[lang], has = m.summary[lang] || exp.length || skills.length || m.contact.length;
+    const el = root.current;
+    gsap.fromTo(el.querySelector(".cv"), { opacity: 0, x: lang === "ar" ? -46 : 46 }, { opacity: 1, x: 0, duration: 0.6, delay: 0.15, ease: "power3.out", clearProps: "transform" });
+    gsap.fromTo(el.querySelectorAll(".cv section"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, delay: 0.4, stagger: 0.07, ease: "power2.out", clearProps: "transform,opacity" });
+    gsap.fromTo(el.querySelectorAll(".bars u"), { scaleX: 0 }, { scaleX: 1, duration: 1.1, delay: 0.7, stagger: 0.08, ease: "power3.out" });
+  }, [m.id, lang]);
   return (
-    <div className="badge" ref={root} role="dialog" aria-modal="true" aria-label={m.name[lang]} onClick={(e) => { if (e.target === e.currentTarget) close(); }} style={{ "--tone": m.tone }}>
+    <div className="badge" ref={root} role="dialog" aria-modal="true" aria-label={m.name[lang]} onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
       <button type="button" className="x" onClick={close} aria-label={t.close}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
-      <div className="stage">
-        <svg className="figure" viewBox="0 0 360 640" aria-hidden="true">
-          <defs>
-            <linearGradient id="fg-skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--f1)" /><stop offset="1" stopColor="var(--f2)" /></linearGradient>
-            <linearGradient id="fg-suit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--s1)" /><stop offset="1" stopColor="var(--s2)" /></linearGradient>
-            <linearGradient id="fg-strap" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#3b6659" /><stop offset=".5" stopColor="#4D7F71" /><stop offset="1" stopColor="#3b6659" /></linearGradient>
-            <linearGradient id="fg-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f0d873" /><stop offset=".5" stopColor="#B99C16" /><stop offset="1" stopColor="#8a7410" /></linearGradient>
-          </defs>
-          <ellipse className="floor" cx="180" cy="628" rx="150" ry="10" />
-          <path className="strapback" d="M132 196 C150 176 210 176 228 196 L224 214 C206 198 154 198 136 214Z" />
-          <path fill="url(#fg-suit)" d="M18 640V372c0-58 40-84 92-98l44-14 26 34 26-34 44 14c52 14 92 40 92 98v268z" />
-          <path className="lapel" d="M154 260 L180 388 L128 300 L140 264Z M206 260 L180 388 L232 300 L220 264Z" />
-          <path className="shirt" d="M154 260 L180 388 L206 260 L196 240 H164Z" />
-          <path fill="url(#fg-skin)" d="M152 176h56v72c0 12-12 26-28 26s-28-14-28-26z" />
-          <path className="chin" d="M152 206c14 16 42 16 56 0v20c-14 14-42 14-56 0z" />
-          <path fill="url(#fg-skin)" d="M180 46c38 0 60 28 60 68 0 46-26 88-60 88s-60-42-60-88c0-40 22-68 60-68z" />
-          <path className="shine" d="M152 68c-14 12-20 30-18 52" />
-          <path className="seam" d="M64 640V430 M296 640V430" />
-          <g className="lanyard">
-            <path className="ribbon" d="M140 232 L180 372" /><path className="print" d="M140 232 L180 372" />
-            <path className="ribbon" d="M220 232 L180 372" /><path className="print" d="M220 232 L180 372" />
-            <rect className="buckle" x="-17" y="-10" width="34" height="20" rx="4" transform="translate(205 286) rotate(16)" fill="url(#fg-gold)" />
-            <rect x="166" y="358" width="28" height="22" rx="3" fill="url(#fg-strap)" />
-            <circle cx="180" cy="390" r="9" fill="none" stroke="url(#fg-gold)" strokeWidth="4.5" />
-          </g>
-        </svg>
-        <div className="hang" ref={hang}>
-          <svg className="hook" viewBox="0 0 30 40" aria-hidden="true"><path d="M15 2v9M8 11h14v6a7 7 0 0 1-7 7 7 7 0 0 1-7-7z M15 24v6a5 5 0 0 1-5 5" fill="none" stroke="#B99C16" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          <Card3D m={m} i={i} t={t} />
-        </div>
-        <p className="hint">{t.dragHint}</p>
-      </div>
-
-      <article className="cv">
-        <header>
-          <svg className="pat" viewBox="0 0 400 120" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><path d="M250 -20 L330 60 L250 140 H290 L370 60 L290 -20Z M320 -20 L400 60 L320 140 H360 L440 60 L360 -20Z" /></svg>
-          <span className="eyebrow">{t.cv} · <span className="mono">{code(i)}</span></span>
-          <h2>{m.name[lang]}</h2>
-          <span className="alt" lang={other(lang)}>{m.name[other(lang)]}</span>
-          <p className="role">{m.role[lang] || t.member}</p>
-        </header>
-        <div className="cvbody">
-          {m.summary[lang] && <section><h3>{t.about}</h3><div><p>{m.summary[lang]}</p></div></section>}
-          {exp.length > 0 && <section><h3>{t.exp}</h3><div className="exp">{exp.map((x, k) => (<div key={k}><b>{x.title[lang]}</b><span>{x.place[lang]}</span><small className="mono">{x.period}</small></div>))}</div></section>}
-          {skills.length > 0 && <section><h3>{t.skills}</h3><div className="tags">{skills.map((f) => <span key={f}>{f}</span>)}</div></section>}
-          {m.contact.length > 0 && <section><h3>{t.contact}</h3><div className="contact">{m.contact.map((c, k) => (<div key={k}><span>{c.label[lang]}</span>{c.href ? <a className="mono" href={c.href}>{c.value}</a> : <b className="mono">{c.value}</b>}</div>))}</div></section>}
-          {!has && <section><h3>{t.about}</h3><div><p className="pending">{t.pending}</p></div></section>}
-          <div className="pager"><button type="button" onClick={() => go(-1)}><Arrow />{t.prev}</button><span className="mono">{i + 1} / {TEAM.length}</span><button type="button" onClick={() => go(1)}>{t.next}<Arrow /></button></div>
-        </div>
-      </article>
+      <Wearer key={m.id} m={m} i={i} t={t} />
+      <Cv m={m} i={i} lang={lang} go={go} />
     </div>
   );
 }
@@ -476,21 +535,71 @@ function Team({ lang }) {
   const t = UI[lang];
   const { id } = useParams();
   const root = useRef(null);
+  const [road, setRoad] = useState(false);
   const idx = TEAM.findIndex((m) => m.id === id);
   useEffect(() => { document.title = (idx >= 0 ? TEAM[idx].name[lang] + " · " : "") + t.team + " · " + t.brand; }, [t, idx, lang]);
-  useEffect(() => { const el = root.current; rise(el.querySelectorAll("h1 span>span"), 0.1); bloom(el.querySelectorAll(".pcard"), 0.11); }, [lang]);
+  useEffect(() => { rise(root.current.querySelectorAll("h1 span>span"), 0.1); }, [lang]);
+  useEffect(() => {
+    const el = root.current;
+    if (!road) { drawIn(el.querySelectorAll(".org .wire"), { duration: 0.8 }); bloom(el.querySelectorAll(".org .root,.org .pcard"), 0.1); return; }
+    if (still) return;
+    const rtl = lang === "ar";
+    drawIn(el.querySelectorAll(".spine path.lay,.spine path.edge"), { duration: 1.8 });
+    gsap.fromTo(el.querySelectorAll(".spine .mid,.lanes .car"), { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 1.2 });
+    const stops = [...el.querySelectorAll(".stop")];
+    gsap.set(stops.map((x) => x.querySelector(".who")), { opacity: 0 });
+    gsap.set(stops.flatMap((x) => [x.querySelector(".pin"), x.querySelector(".dot")]), { opacity: 0 });
+    return onReveal(stops, (st) => {
+      const a = st.classList.contains("a"), from = (a ? -1 : 1) * (rtl ? -1 : 1) * 90, k = stops.indexOf(st), tl = gsap.timeline({ delay: 0.15 + Math.min(k, 2) * 0.16 });
+      tl.fromTo(st.querySelector(".pin"), { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2.4)" })
+        .fromTo(st.querySelector(".dot"), { opacity: 1, scaleX: 0, transformOrigin: (a ? !rtl : rtl) ? "100% 50%" : "0% 50%" }, { scaleX: 1, duration: 0.35, ease: "power2.out" }, "-=0.2")
+        .fromTo(st.querySelector(".who"), { opacity: 0, x: from, rotation: from > 0 ? 3 : -3 }, { opacity: 1, x: 0, rotation: 0, duration: 0.8, ease: "back.out(1.5)", clearProps: "transform,opacity" }, "-=0.15")
+        .fromTo(st.querySelector(".ph"), { scale: 0.4 }, { scale: 1, duration: 0.7, ease: "elastic.out(1,0.5)", clearProps: "transform" }, "-=0.55")
+        .fromTo(st.querySelectorAll(".tx>*,.end>*"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "power2.out", clearProps: "transform,opacity" }, "-=0.5");
+    });
+  }, [road, lang]);
   const lean = (e) => { if (still) return; const el = e.currentTarget, r = el.getBoundingClientRect(); el.style.setProperty("--ry", (((e.clientX - r.left) / r.width - 0.5) * 16).toFixed(1) + "deg"); el.style.setProperty("--rx", ((0.5 - (e.clientY - r.top) / r.height) * 12).toFixed(1) + "deg"); };
   const level = (e) => { e.currentTarget.style.setProperty("--ry", "0deg"); e.currentTarget.style.setProperty("--rx", "0deg"); };
   return (
     <div className="teampage" ref={root}>
-      <div className="head top"><div><h1><span><span>{t.teamH}</span></span></h1><p>{t.teamP}</p></div></div>
-      <div className="people">
-        {TEAM.map((m, i) => (
-          <Link key={m.id} to={"/team/" + m.id} className="pcard" style={{ "--tone": m.tone }} onPointerMove={lean} onPointerLeave={level} aria-label={m.name[lang]}>
-            <i className="slot" /><CardFront m={m} i={i} />
-          </Link>
-        ))}
+      <div className="head top">
+        <div><h1><span><span>{t.teamH}</span></span></h1><p>{road ? t.teamRoad : t.teamP}</p></div>
+        <button type="button" className="btn solid" onClick={(e) => { setRoad(!road); pop(e.currentTarget); }}>
+          <svg className="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: "none" }}>{road ? <path d="M4 5h6v6H4zM14 5h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /> : <path d="M9 21 11 3h2l2 18M12 6v2M12 11v2M12 16v2" />}</svg>
+          {road ? t.showCards : t.showAll}
+        </button>
       </div>
+      {!road ? (
+        <div className="org">
+          <div className="root"><b>{t.orgRoot}</b><span className="mono">{TEAM.length}</span></div>
+          <svg className="wires" viewBox="0 0 1000 70" preserveAspectRatio="none" aria-hidden="true">
+            <path className="wire" d="M500 0V34" />{TEAM.map((_, k) => { const x = ((k + 0.5) / TEAM.length) * 1000; return <path key={k} className="wire" d={`M500 34H${x}V70`} />; })}
+            <path className="mid" d={`M${(0.5 / TEAM.length) * 1000} 34H${((TEAM.length - 0.5) / TEAM.length) * 1000}`} />
+          </svg>
+          <div className="people" style={{ "--n": TEAM.length }}>
+            {TEAM.map((m, i) => (
+              <Link key={m.id} to={"/team/" + m.id} className="pcard" style={{ "--tone": m.tone }} onPointerMove={lean} onPointerLeave={level} aria-label={m.name[lang]}>
+                <i className="slot" /><CardFront m={m} i={i} />
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="lanes">
+          <svg className="spine" viewBox="0 0 60 100" preserveAspectRatio="none" aria-hidden="true"><path className="lay" d="M30 0V100" /><path className="edge" d="M14 0V100" /><path className="edge" d="M46 0V100" /><path className="mid" d="M30 0V100" /></svg>
+          <i className="car" aria-hidden="true" /><i className="car up" aria-hidden="true" />
+          {TEAM.map((m, i) => (
+            <Link key={m.id} to={"/team/" + m.id} className={"stop " + (i % 2 ? "b" : "a")} style={{ "--tone": m.tone }}>
+              <i className="dot" /><i className="pin" />
+              <span className="who">
+                <span className="ph"><Photo m={m} /></span>
+                <span className="tx"><b>{m.name[lang]}</b><small lang={other(lang)}>{m.name[other(lang)]}</small><em>{m.role[lang]}</em></span>
+                <span className="end"><span className="mono">{code(i)}</span><span className="go"><Arrow /></span></span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
       {idx >= 0 && <Badge m={TEAM[idx]} i={idx} lang={lang} />}
     </div>
   );
