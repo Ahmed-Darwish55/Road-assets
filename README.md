@@ -1,19 +1,64 @@
-# Road Assets Tree
+# Road Docs
 
-Interactive tree of the road asset classification: 2 asset classifications, 12 asset families, 279 assets and components.
+The team's documentation hub: classifications, integration references and guides, each on its own stable link.
 
-- Open `index.html` in any browser. It is a single file and needs no build step.
-- English and Arabic, light and dark mode.
-- Click a card to open what sits under it. Cards with nothing under them show a short note and their path in the tree.
-- **Show full tree** opens every level at once.
-- Full screen: the mouse wheel zooms, dragging moves the board.
-- Phones and tablets: drag with one finger to move, pinch with two fingers to zoom.
+| Link | Page |
+| --- | --- |
+| `/` | Hub: every page, searchable, by category |
+| `/road-assets-tree` | Road Assets Tree: 2 classifications, 12 families, 279 assets and components |
+| `/tomtom-travel-time` | Travel time between traffic counters with the TomTom Routing API |
+
+Arabic and English, light and dark. The hub passes its language and theme to each page.
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+`npm run build` writes the site to `dist/`. Vercel builds it on every push using `vercel.json`.
+
+## Adding a page
+
+Every page is one entry in `src/docs.js`. There are two kinds.
+
+**A standalone HTML page** (a single self-contained file):
+
+1. Put it at `public/pages/<slug>/index.html`.
+2. Add an entry to `DOCS` in `src/docs.js`:
+
+```js
+{
+  slug: "my-page",
+  category: "guides",            // a key of CATEGORIES
+  icon: "doc",                    // tree | route | doc
+  title: { ar: "…", en: "…" },
+  summary: { ar: "…", en: "…" },
+  updated: "2026-11-24",
+  src: "/pages/my-page/index.html",
+}
+```
+
+**A React page**:
+
+1. Create `src/pages/MyPage.jsx` with a default export. It receives a `lang` prop (`"ar"` or `"en"`).
+2. Add the same entry, with `load` instead of `src`:
+
+```js
+load: () => import("./pages/MyPage.jsx"),
+```
+
+The page is then live at `/<slug>` and appears on the hub. To add a category, add a key to `CATEGORIES` in the same file.
 
 ---
 
-# شجرة أصول الطرق
+# مركز التوثيق
 
-شجرة تفاعلية لتصنيف أصول الطرق: تصنيفان، 12 قسمًا، و279 أصلًا ومكوّنًا.
+مرجع الفريق: التصنيفات، مراجع التكامل، والأدلة، ولكل صفحة رابط ثابت.
 
-- افتح `index.html` في أي متصفح. ملف واحد ولا يحتاج أي تجهيز.
-- عربي وإنجليزي، وضع فاتح وداكن.
+- `/` المركز: كل الصفحات مع بحث وتصنيف.
+- `/road-assets-tree` شجرة أصول الطرق.
+- `/tomtom-travel-time` زمن الرحلة بين العدادات عبر TomTom.
+
+لإضافة صفحة: ضع الملف في `public/pages/<slug>/index.html` (أو مكوّن React في `src/pages/`) ثم أضف سطرًا في `src/docs.js` كما في القسم الإنجليزي أعلاه.
