@@ -326,6 +326,7 @@ function Person({ female, crop, collar = true, className = "" }) {
           <path fill="#1b2421" d="M168 272l32 112-50-56c-4-22 4-42 18-56zM232 272l-32 112 50-56c4-22-4-42-18-56z" />
           <path fill="url(#pg-skin)" d="M200 52c36 0 56 26 56 66v14c0 44-25 78-56 78s-56-34-56-78v-14c0-40 20-66 56-66z" />
           <path fill="#33241d" d="M142 140c-8-60 20-98 58-98s66 36 58 98c-8-32-30-54-62-60-10 24-30 46-54 60z" />
+          {collar && <path fill="#fbf6ec" stroke="#d9d2c3" strokeWidth="1.2" strokeLinejoin="round" d="M181 238c4 14 10 24 19 32l-27 16c-6-12-8-26-6-40zM219 238c-4 14-10 24-19 32l27 16c6-12 8-26 6-40z" />}
           <circle cx="146" cy="340" r="6" fill="#e3c64a" />
           <path fill="none" stroke="#000" strokeWidth="2" opacity=".14" d="M92 620V440M308 620V440" />
         </>
@@ -395,7 +396,7 @@ function Wearer({ m, i, t }) {
   const stage = useRef(null), hang = useRef(null), card = useRef(null), sL = useRef(null), sR = useRef(null), pL = useRef(null), pR = useRef(null);
   const sim = useRef(null);
   const female = m.gender === "f";
-  const NL = female ? { x: 181, y: 250 } : { x: 172, y: 258 }, NR = female ? { x: 219, y: 250 } : { x: 228, y: 258 };
+  const NL = female ? { x: 175, y: 262 } : { x: 172, y: 258 }, NR = female ? { x: 225, y: 262 } : { x: 228, y: 258 };
   const flip = () => { const s = sim.current; const next = Math.round(s.flip.a / 180) * 180 + 180; if (still) { s.flip.a = next; s.draw(); } else gsap.to(s.flip, { a: next, duration: 0.95, ease: "back.out(1.5)", overwrite: true }); };
   useEffect(() => {
     const A = { x: 200, y: REST.y - ROPE };
@@ -439,7 +440,7 @@ function Wearer({ m, i, t }) {
         <defs><linearGradient id="st-g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#3b6659" /><stop offset=".5" stopColor="#5a8f80" /><stop offset="1" stopColor="#3b6659" /></linearGradient></defs>
         <path ref={sL} className="ribbon" /><path ref={pL} className="print" /><path ref={sR} className="ribbon" /><path ref={pR} className="print" />
         {!female && <path fill="#fff" stroke="#d5d9d8" strokeWidth="1.2" strokeLinejoin="round" d="M178 238l22 30-28 18-8-36zM222 238l-22 30 28 18 8-36z" />}
-        {female && <path fill="#1b2421" d="M168 272l14 50-10-56zM232 272l-14 50 10-56z" opacity="0" />}
+        {female && <path fill="#fbf6ec" stroke="#d9d2c3" strokeWidth="1.2" strokeLinejoin="round" d="M181 238c4 14 10 24 19 32l-27 16c-6-12-8-26-6-40zM219 238c-4 14-10 24-19 32l27 16c6-12 8-26 6-40z" />}
       </svg>
       <div className="hang" ref={hang}>
         <svg className="hook" viewBox="0 0 36 46" aria-hidden="true">
