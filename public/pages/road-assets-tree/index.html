@@ -255,6 +255,13 @@ html[dir="rtl"] .soon .back svg{transform:scaleX(-1)}
 .pop li:last-child{padding-bottom:0;font-weight:800;color:var(--text)}
 .pop li:last-child::after{display:none}
 @media (prefers-reduced-motion: reduce){.fl{animation:none}#ring circle,.split div,.fr .tr i,.pill .knob{transition:none}}
+
+/* nothing on this page is selectable, in the page or in full screen; the search field stays editable */
+html,body,body *,body *::before,body *::after{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text!important;user-select:text!important}
+::selection{background:transparent;color:inherit}
+input::selection,textarea::selection{background:color-mix(in srgb,var(--primary) 35%,transparent);color:inherit}
+:fullscreen,:fullscreen *{-webkit-user-select:none!important;user-select:none!important}
 </style>
 </head>
 <body>
@@ -583,6 +590,12 @@ $('#theme').addEventListener('click',e=>{const b=e.target.closest('button');if(!
   t.ready.then(()=>{page.animate({clipPath:dark?[closed,open]:[open,closed]},{duration:700,easing:dark?'cubic-bezier(0.55,0,0.8,0.6)':'cubic-bezier(0.2,0.4,0.45,1)',fill:'forwards',pseudoElement:dark?'::view-transition-new(root)':'::view-transition-old(root)'});}).catch(()=>{});
   t.finished.finally(()=>page.removeAttribute('data-shrinking'));});
 paintMode();if(innerWidth<=640)setZoom(.8);start();
+</script>
+<script>
+(function(){var editable=function(t){return t&&t.closest&&t.closest('input,textarea');};
+document.addEventListener('selectstart',function(e){if(!editable(e.target))e.preventDefault();});
+document.addEventListener('dragstart',function(e){if(!editable(e.target))e.preventDefault();});
+document.addEventListener('mousedown',function(e){if(e.detail>1&&!editable(e.target))e.preventDefault();});})();
 </script>
 </body>
 </html>
