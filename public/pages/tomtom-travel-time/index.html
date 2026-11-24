@@ -166,7 +166,7 @@ html[data-mode="dark"] .state.g{color:#86c2af}
 
 /* indicator cards */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
-.kpi{display:grid;gap:10px;align-content:start;background:var(--surface);border-top:4px solid var(--k);padding:14px 16px 16px;box-shadow:var(--shadow)}
+.kpi{display:flex;flex-direction:column;gap:10px;background:var(--surface);border-top:4px solid var(--k);padding:14px 16px 16px;box-shadow:var(--shadow)}
 .kpi .kh{display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:700;color:var(--text)}
 .kpi .kh>span{display:inline;font-size:inherit;color:inherit}
 .kpi .kh #o-state{margin-inline-start:auto}
@@ -174,13 +174,17 @@ html[data-mode="dark"] .state.g{color:#86c2af}
 .ki{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--k) 22%,var(--surface));color:var(--text);flex:none}
 .ki svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .kpi>b{font-size:30px;line-height:1.25}
-.cmp{display:grid;gap:6px}
-.br{display:grid;grid-template-columns:74px 1fr 52px;align-items:center;gap:10px;font-size:12.5px}
+.kpi>b+*{margin-top:auto}
+.kpi .eq{margin-top:auto}
+.kcap{font-size:13.5px;font-weight:600;color:var(--text2);margin:0;max-width:none}
+.cmp{display:grid;gap:10px}
+.br{display:grid;grid-template-columns:74px 1fr 60px;align-items:center;gap:10px;font-size:12.5px}
 .br em{font-style:normal;color:var(--text2)}
 .br s,.lgd s{text-decoration:none;color:var(--text);font-size:12.5px}
-.bar,.stack{display:flex;height:14px;border-radius:7px;background:var(--field);border:1px solid var(--line);overflow:hidden}
+.bar,.stack{display:flex;height:18px;border-radius:9px;background:var(--field);border:1px solid var(--line);overflow:hidden}
 .bar u,.stack u{display:block;height:100%;width:0;background:var(--k);transition:width 1.1s var(--grow)}
 .bar u.alt{background:var(--muted)}
+.bar u.dif{background:var(--red)}
 .stack{height:22px;border-radius:8px;direction:ltr}
 .stack u{background:var(--muted)}.stack u.d{background:var(--k)}
 .lgd{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--text2)}
@@ -344,7 +348,9 @@ footer{font-size:13.5px;color:var(--muted);margin-top:8px;padding-inline-start:6
       <div class="cmp">
         <div class="br"><em data-t="cNow">الحالي</em><i class="bar"><u id="b-now"></u></i><s id="v-now" class="mono"></s></div>
         <div class="br"><em data-t="cFree">جريان حر</em><i class="bar"><u id="b-free" class="alt"></u></i><s id="v-free" class="mono"></s></div>
+        <div class="br"><em data-t="cDiff">الفرق</em><i class="bar"><u id="b-diff" class="dif"></u></i><s id="v-diff" class="mono"></s></div>
       </div>
+      <p class="kcap" id="k-cap"></p>
       <div class="eq"><code>travelTimeInSeconds ÷ 60</code><code id="e-min" class="num"></code></div>
     </div>
     <div class="tile kpi" style="--k:var(--blue)">
@@ -446,7 +452,7 @@ const EN={
  s4p:'The indicators are read from <code>routes[0].summary</code>. With <code>sectionType=traffic</code> the response includes a <code>sections</code> array of traffic incidents on the route. The values below are illustrative. Click any line for the field description.',
  sample:'sample response',s5:'Deriving the indicators',
  s5p:'Four indicators are derived from three fields. The travel time index (TTI) is the ratio of current travel time to free-flow travel time.',
- cNow:'Current',cFree:'Free flow',cDelay:'Delay',eqNote:'× 3.6 converts m/s to km/h',
+ cNow:'Current',cFree:'Free flow',cDiff:'Difference',cDelay:'Delay',eqNote:'× 3.6 converts m/s to km/h',
  k1:'Travel time',k2:'Average speed',k3:'Delay versus free flow',k4:'Travel time index (TTI)',
  s5n:'The classification thresholds used here are defaults: TTI under 1.15 free flow, up to 1.5 moderate, up to 2.0 congested, above that severe. Replace them with the thresholds adopted by the Authority.',
  pasteH:'Analysing a real response',pasteL:'JSON text returned by the service',parse:'Parse and calculate',
@@ -709,7 +715,8 @@ function calc(){
     $('o-state').innerHTML=`<span class="state ${lv[0]}"><i></i>${lv[1]}</span>`;
   }else{$('o-del').textContent='—';$('o-tti').textContent='—';$('o-state').innerHTML='';}
   const W=(id,v)=>{$(id).style.width=Math.max(0,Math.min(100,v))+'%';},sec=tr(' ث',' s'),f=n>0?n:t,mx=Math.max(t,f);
-  W('b-now',t/mx*100);W('b-free',f/mx*100);$('v-now').textContent=fmt(t)+sec;$('v-free').textContent=n>0?fmt(n)+sec:'—';
+  W('b-now',t/mx*100);W('b-free',f/mx*100);W('b-diff',Math.abs(t-f)/mx*100);$('v-diff').textContent=n>0?(t>=f?'+':'−')+fmt(Math.abs(t-f))+sec:'—';
+  $('k-cap').textContent=n>0?(t>f?tr('أبطأ من الجريان الحر بنسبة ','Slower than free flow by ')+fmt((t/f-1)*100)+'%':t<f?tr('أسرع من الجريان الحر بنسبة ','Faster than free flow by ')+fmt((1-t/f)*100)+'%':tr('مساوٍ لزمن الجريان الحر','Equal to the free-flow time')):'';$('v-now').textContent=fmt(t)+sec;$('v-free').textContent=n>0?fmt(n)+sec:'—';
   $('e-min').textContent=`${fmt(t)} ÷ 60 = ${fmt(t/60,2)} ${tr('د','min')}`;
   const v=l/t*3.6,vf=l/f*3.6,gm=Math.max(120,Math.ceil(Math.max(v,vf)/20)*20);
   $('g-val').setAttribute('stroke-dasharray',Math.min(100,v/gm*100)+' 100');$('g-free').style.transform=`rotate(${-90+Math.min(1,vf/gm)*180}deg)`;$('g-max').textContent=gm;
