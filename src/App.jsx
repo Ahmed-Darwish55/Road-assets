@@ -23,7 +23,7 @@ const UI = {
     search: "ابحث في الوثائق…", all: "الكل", cards: "بطاقات", sidebar: "قائمة جانبية", view: "طريقة العرض",
     updated: "آخر تحديث", none: "لا توجد وثيقة مطابقة.", open: "فتح الوثيقة", standalone: "تبويب مستقل",
     pick: "اختر وثيقة من القائمة", missing: "الصفحة غير موجودة", home: "العودة إلى الرئيسية",
-    teamH: "الفريق", teamP: "اضغط أي عضو لتراه مرتديًا بطاقته، ومعها سيرته المهنية.", teamAll: "الفريق كله في هيكل واحد. اضغط أي بطاقة لفتحها.", showAll: "عرض الفريق كهيكل", showRoad: "العودة إلى الطريق", orgRoot: "فريق أنظمة الطرق", edu: "التعليم", langs: "اللغات", demoTag: "بيانات تجريبية", cv: "السيرة المهنية", about: "نبذة", exp: "الخبرات", skills: "المهارات", contact: "التواصل", pending: "لم تُضف بيانات هذا العضو بعد.", flip: "اقلب البطاقة", dragHint: "أمسك البطاقة وحرّكها لتتأرجح · اضغطها لتقلبها", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
+    teamH: "الفريق", teamP: "اضغط أي بطاقة لترى صاحبها مرتديًا إياها، ومعها سيرته المهنية.", teamRoad: "الفريق كله على الطريق. اضغط أي عضو لفتح بطاقته.", showAll: "عرض كل الفريق", showCards: "العودة إلى البطاقات", orgRoot: "فريق أنظمة الطرق", edu: "التعليم", langs: "اللغات", demoTag: "بيانات تجريبية", cv: "السيرة المهنية", about: "نبذة", exp: "الخبرات", skills: "المهارات", contact: "التواصل", pending: "لم تُضف بيانات هذا العضو بعد.", flip: "اقلب البطاقة", dragHint: "أمسك البطاقة وحرّكها لتتأرجح · اضغطها لتقلبها", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
     foot: "مرجع داخلي للفريق.",
   },
   en: {
@@ -37,7 +37,7 @@ const UI = {
     search: "Search the docs…", all: "All", cards: "Cards", sidebar: "Sidebar", view: "View",
     updated: "Updated", none: "No matching document.", open: "Open document", standalone: "Own tab",
     pick: "Pick a document from the list", missing: "Page not found", home: "Back to home",
-    teamH: "The team", teamP: "Click a member to see them wearing their card, with their professional profile.", teamAll: "The whole team as one structure. Click any card to open it.", showAll: "Show the team as a structure", showRoad: "Back to the road", orgRoot: "Road Systems team", edu: "Education", langs: "Languages", demoTag: "Demo data", cv: "Professional profile", about: "Summary", exp: "Experience", skills: "Skills", contact: "Contact", pending: "Details for this member have not been added yet.", flip: "Flip the card", dragHint: "Grab the card and move it to swing it · click it to flip", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
+    teamH: "The team", teamP: "Click a card to see its owner wearing it, with their professional profile.", teamRoad: "The whole team along the road. Click a member to open their card.", showAll: "Show the whole team", showCards: "Back to the cards", orgRoot: "Road Systems team", edu: "Education", langs: "Languages", demoTag: "Demo data", cv: "Professional profile", about: "Summary", exp: "Experience", skills: "Skills", contact: "Contact", pending: "Details for this member have not been added yet.", flip: "Flip the card", dragHint: "Grab the card and move it to swing it · click it to flip", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
     foot: "Internal team reference.",
   },
 };
@@ -535,27 +535,41 @@ function Team({ lang }) {
   const t = UI[lang];
   const { id } = useParams();
   const root = useRef(null);
-  const [all, setAll] = useState(false);
+  const [road, setRoad] = useState(false);
   const idx = TEAM.findIndex((m) => m.id === id);
   useEffect(() => { document.title = (idx >= 0 ? TEAM[idx].name[lang] + " · " : "") + t.team + " · " + t.brand; }, [t, idx, lang]);
   useEffect(() => { rise(root.current.querySelectorAll("h1 span>span"), 0.1); }, [lang]);
   useEffect(() => {
     const el = root.current;
-    if (all) { drawIn(el.querySelectorAll(".org .wire"), { duration: 0.8 }); bloom(el.querySelectorAll(".org .root,.org .pcard"), 0.1); }
-    else { drawIn(el.querySelectorAll(".spine path.lay"), { duration: 1.6, delay: 0.1 }); bloom(el.querySelectorAll(".stop"), 0.14); }
-  }, [all, lang]);
+    if (!road) { drawIn(el.querySelectorAll(".org .wire"), { duration: 0.8 }); bloom(el.querySelectorAll(".org .root,.org .pcard"), 0.1); return; }
+    if (still) return;
+    const rtl = lang === "ar";
+    drawIn(el.querySelectorAll(".spine path.lay,.spine path.edge"), { duration: 1.8 });
+    gsap.fromTo(el.querySelectorAll(".spine .mid,.lanes .car"), { opacity: 0 }, { opacity: 1, duration: 0.5, delay: 1.2 });
+    const stops = [...el.querySelectorAll(".stop")];
+    gsap.set(stops.map((x) => x.querySelector(".who")), { opacity: 0 });
+    gsap.set(stops.flatMap((x) => [x.querySelector(".pin"), x.querySelector(".dot")]), { opacity: 0 });
+    return onReveal(stops, (st) => {
+      const a = st.classList.contains("a"), from = (a ? -1 : 1) * (rtl ? -1 : 1) * 90, k = stops.indexOf(st), tl = gsap.timeline({ delay: 0.15 + Math.min(k, 2) * 0.16 });
+      tl.fromTo(st.querySelector(".pin"), { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2.4)" })
+        .fromTo(st.querySelector(".dot"), { opacity: 1, scaleX: 0, transformOrigin: (a ? !rtl : rtl) ? "100% 50%" : "0% 50%" }, { scaleX: 1, duration: 0.35, ease: "power2.out" }, "-=0.2")
+        .fromTo(st.querySelector(".who"), { opacity: 0, x: from, rotation: from > 0 ? 3 : -3 }, { opacity: 1, x: 0, rotation: 0, duration: 0.8, ease: "back.out(1.5)", clearProps: "transform,opacity" }, "-=0.15")
+        .fromTo(st.querySelector(".ph"), { scale: 0.4 }, { scale: 1, duration: 0.7, ease: "elastic.out(1,0.5)", clearProps: "transform" }, "-=0.55")
+        .fromTo(st.querySelectorAll(".tx>*,.end>*"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "power2.out", clearProps: "transform,opacity" }, "-=0.5");
+    });
+  }, [road, lang]);
   const lean = (e) => { if (still) return; const el = e.currentTarget, r = el.getBoundingClientRect(); el.style.setProperty("--ry", (((e.clientX - r.left) / r.width - 0.5) * 16).toFixed(1) + "deg"); el.style.setProperty("--rx", ((0.5 - (e.clientY - r.top) / r.height) * 12).toFixed(1) + "deg"); };
   const level = (e) => { e.currentTarget.style.setProperty("--ry", "0deg"); e.currentTarget.style.setProperty("--rx", "0deg"); };
   return (
     <div className="teampage" ref={root}>
       <div className="head top">
-        <div><h1><span><span>{t.teamH}</span></span></h1><p>{all ? t.teamAll : t.teamP}</p></div>
-        <button type="button" className="btn solid" onClick={(e) => { setAll(!all); pop(e.currentTarget); }}>
-          <svg className="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: "none" }}>{all ? <path d="M12 3v18M5 8h7M12 16h7" /> : <path d="M12 4v5M5 20v-6h14v6M12 9v5M3 20h4M17 20h4M10 4h4" />}</svg>
-          {all ? t.showRoad : t.showAll}
+        <div><h1><span><span>{t.teamH}</span></span></h1><p>{road ? t.teamRoad : t.teamP}</p></div>
+        <button type="button" className="btn solid" onClick={(e) => { setRoad(!road); pop(e.currentTarget); }}>
+          <svg className="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transform: "none" }}>{road ? <path d="M4 5h6v6H4zM14 5h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /> : <path d="M9 21 11 3h2l2 18M12 6v2M12 11v2M12 16v2" />}</svg>
+          {road ? t.showCards : t.showAll}
         </button>
       </div>
-      {all ? (
+      {!road ? (
         <div className="org">
           <div className="root"><b>{t.orgRoot}</b><span className="mono">{TEAM.length}</span></div>
           <svg className="wires" viewBox="0 0 1000 70" preserveAspectRatio="none" aria-hidden="true">
@@ -572,7 +586,8 @@ function Team({ lang }) {
         </div>
       ) : (
         <div className="lanes">
-          <svg className="spine" viewBox="0 0 60 100" preserveAspectRatio="none" aria-hidden="true"><path className="lay" d="M30 0V100" /><path className="mid" d="M30 0V100" /></svg>
+          <svg className="spine" viewBox="0 0 60 100" preserveAspectRatio="none" aria-hidden="true"><path className="lay" d="M30 0V100" /><path className="edge" d="M14 0V100" /><path className="edge" d="M46 0V100" /><path className="mid" d="M30 0V100" /></svg>
+          <i className="car" aria-hidden="true" /><i className="car up" aria-hidden="true" />
           {TEAM.map((m, i) => (
             <Link key={m.id} to={"/team/" + m.id} className={"stop " + (i % 2 ? "b" : "a")} style={{ "--tone": m.tone }}>
               <i className="dot" /><i className="pin" />
