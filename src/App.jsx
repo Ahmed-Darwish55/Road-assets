@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { CATEGORIES, DOCS } from "./docs.js";
 import { TEAM } from "./team.js";
 import { bloom, drawIn, gsap, onReveal, pageTurn, pop, rise, still, themeReveal } from "./motion.js";
@@ -23,7 +23,7 @@ const UI = {
     search: "ابحث في الوثائق…", all: "الكل", cards: "بطاقات", sidebar: "قائمة جانبية", view: "طريقة العرض",
     updated: "آخر تحديث", none: "لا توجد وثيقة مطابقة.", open: "فتح الوثيقة", standalone: "تبويب مستقل",
     pick: "اختر وثيقة من القائمة", missing: "الصفحة غير موجودة", home: "العودة إلى الرئيسية",
-    teamH: "الفريق", teamP: "الأشخاص وراء المشروع، وكلٌّ في مساره.", count: (n) => `${n} وثائق`,
+    teamH: "الفريق", teamP: "اضغط أي بطاقة لترى بطاقة التعريف والتفاصيل.", cv: "السيرة المهنية", about: "نبذة", exp: "الخبرات", skills: "المهارات", contact: "التواصل", pending: "لم تُضف بيانات هذا العضو بعد.", flip: "اقلب البطاقة", dragHint: "اسحب البطاقة لتدويرها، أو اضغطها لتقلبها", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
     foot: "مرجع داخلي للفريق.",
   },
   en: {
@@ -37,7 +37,7 @@ const UI = {
     search: "Search the docs…", all: "All", cards: "Cards", sidebar: "Sidebar", view: "View",
     updated: "Updated", none: "No matching document.", open: "Open document", standalone: "Own tab",
     pick: "Pick a document from the list", missing: "Page not found", home: "Back to home",
-    teamH: "The team", teamP: "The people behind the project, each in their lane.", count: (n) => `${n} documents`,
+    teamH: "The team", teamP: "Click any card to see the badge and the details.", cv: "Professional profile", about: "Summary", exp: "Experience", skills: "Skills", contact: "Contact", pending: "Details for this member have not been added yet.", flip: "Flip the card", dragHint: "Drag the card to turn it, or click it to flip", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
     foot: "Internal team reference.",
   },
 };
@@ -109,13 +109,12 @@ function Sign({ doc, lang, compact }) {
   );
 }
 
-function Shield({ m, size = 76 }) {
+/* A portrait, or the member's initials on their colour when no photo has been added. */
+function Face({ m, className = "" }) {
   return (
-    <svg className="shield" viewBox="0 0 80 88" width={size} aria-hidden="true" style={{ "--tone": m.tone }}>
-      <path d="M8 6h64a4 4 0 0 1 4 4v34c0 20-16 32-36 40C20 76 4 64 4 44V10a4 4 0 0 1 4-4z" />
-      <path className="in" d="M12 11h56v33c0 16-13 26-28 33-15-7-28-17-28-33z" />
-      <text x="40" y="47" textAnchor="middle">{m.mark}</text>
-    </svg>
+    <span className={"face " + className} style={{ "--tone": m.tone }}>
+      {m.photo ? <img src={m.photo} alt="" loading="lazy" /> : <i aria-hidden="true">{m.mark}</i>}
+    </span>
   );
 }
 
@@ -206,7 +205,7 @@ function Home({ lang }) {
 
       <section className="band reveal">
         <div className="head"><div><h2>{t.team}</h2><p>{t.teamLead}</p></div><Link className="more" to="/team">{t.allTeam}<Arrow /></Link></div>
-        <div className="crew">{TEAM.map((m) => (<Link key={m.id} to="/team" className="member"><Shield m={m} size={64} /><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
+        <div className="crew">{TEAM.map((m) => (<Link key={m.id} to={"/team/" + m.id} className="member"><Face m={m} /><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
       </section>
       <footer className="foot"><span>{t.foot}</span><span className="mono">{DOCS.length} docs · {TEAM.length} people</span></footer>
     </div>
@@ -313,31 +312,186 @@ function Viewer({ lang, view, setView }) {
   );
 }
 
+const code = (i) => String(9750 + i * 7 + 3);
+const bars = (id) => [...id].map((c, i) => 1 + ((c.charCodeAt(0) + i * 7) % 4));
+
+/* The lower part of the emblem: two road bands crossing, as on the Authority's employee card. */
+const Roads = () => (
+  <svg className="roads" viewBox="0 0 300 200" aria-hidden="true">
+    <path className="band" d="M-24 2 L186 176" /><path className="dash" d="M-24 2 L186 176" />
+    <path className="gap" d="M324 2 L114 176" /><path className="band" d="M324 2 L114 176" /><path className="dash" d="M324 2 L114 176" />
+  </svg>
+);
+
+/* Portrait over the crossing roads. Without a photo, the member's initials stand in. */
+function Portrait({ m }) {
+  return (
+    <span className="portrait" style={{ "--tone": m.tone }}>
+      <span className="arch">{m.photo ? <img src={m.photo} alt="" loading="lazy" /> : <i aria-hidden="true">{m.mark}</i>}</span>
+      <Roads />
+    </span>
+  );
+}
+
+/* Card front, laid out like the Authority's employee ID: photo on the emblem, Arabic and English name, position, number. */
+function CardFront({ m, i }) {
+  return (
+    <>
+      <span className="org"><b>أنظمة الطرق</b><span>Road Systems</span></span>
+      <Portrait m={m} />
+      <b className="nar" lang="ar" dir="rtl">{m.name.ar}</b>
+      <span className="nen" lang="en" dir="ltr">{m.name.en}</span>
+      <b className="rar" lang="ar" dir="rtl">{m.role.ar || "عضو الفريق"}</b>
+      <span className="ren" lang="en" dir="ltr">{m.role.en || "Team member"}</span>
+      <span className="idn mono">{code(i)}</span>
+    </>
+  );
+}
+
+/* A real two-sided card: drag to turn it, click to flip it. */
+function Card3D({ m, i, t }) {
+  const card = useRef(null), ang = useRef(0), drag = useRef(null);
+  const to = (a, spring) => { ang.current = a; if (still || !spring) gsap.set(card.current, { rotationY: a }); else gsap.to(card.current, { rotationY: a, rotationX: 0, duration: 1, ease: "back.out(1.5)", overwrite: true }); };
+  const flip = () => to(Math.round(ang.current / 180) * 180 + 180, true);
+  useEffect(() => { gsap.set(card.current, { rotationX: 0 }); to(0, false); }, [m.id]);
+  const down = (e) => { gsap.killTweensOf(card.current); gsap.set(card.current, { rotationX: 0 }); drag.current = { x: e.clientX, a: ang.current, moved: 0, now: ang.current }; e.currentTarget.setPointerCapture(e.pointerId); };
+  const move = (e) => {
+    const d = drag.current, r = e.currentTarget.getBoundingClientRect();
+    if (d) { const dx = e.clientX - d.x; d.moved = Math.max(d.moved, Math.abs(dx)); d.now = d.a + dx * 0.8; gsap.set(card.current, { rotationY: d.now }); return; }
+    if (!still && e.pointerType === "mouse") gsap.to(card.current, { rotationX: (0.5 - (e.clientY - r.top) / r.height) * 12, rotationY: ang.current + ((e.clientX - r.left) / r.width - 0.5) * 16, duration: 0.3, overwrite: true });
+  };
+  const up = () => { const d = drag.current; drag.current = null; if (!d) return; if (d.moved < 6) flip(); else to(Math.round(d.now / 180) * 180, true); };
+  const leave = () => { if (!drag.current && !still) gsap.to(card.current, { rotationX: 0, rotationY: ang.current, duration: 0.5, overwrite: true }); };
+  const key = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } };
+  return (
+    <>
+      <div className="card3d" ref={card} style={{ "--tone": m.tone }} role="button" tabIndex={0} aria-label={t.flip} onKeyDown={key}
+        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={leave}>
+        <div className="cside front"><i className="slot" /><CardFront m={m} i={i} /></div>
+        <div className="cside back">
+          <i className="slot" />
+          <svg className="pat" viewBox="0 0 240 360" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M-10 250 L120 150 L250 250 V290 L120 190 L-10 290Z M-10 320 L120 220 L250 320 V360 L120 260 L-10 360Z" />
+            <path className="g" d="M150 -10 L250 70 V100 L120 -10Z M200 -10 L250 30 V55 L170 -10Z" />
+          </svg>
+          <span className="org"><b>مركز التوثيق</b><span>Docs Hub</span></span>
+          <span className="bk"><b lang="ar" dir="rtl">{m.name.ar}</b><span lang="en" dir="ltr">{m.name.en}</span></span>
+          <span className="bk2"><span className="mono">/team/{m.id}</span><span className="barcode" aria-hidden="true">{bars(m.id).map((w, k) => <i key={k} style={{ width: w + "px" }} />)}</span><span className="mono big">{code(i)}</span></span>
+        </div>
+      </div>
+      <button type="button" className="flipbtn" onClick={(e) => { flip(); pop(e.currentTarget); }}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9a8 8 0 0 1 14-3M20 15a8 8 0 0 1-14 3M18 2v4h-4M6 22v-4h4" /></svg>{t.flip}
+      </button>
+    </>
+  );
+}
+
+/* The member wearing the card on a lanyard, with a CV sheet beside it. */
+function Badge({ m, i, lang }) {
+  const t = UI[lang];
+  const nav = useNavigate();
+  const root = useRef(null), hang = useRef(null);
+  const go = (d) => nav("/team/" + TEAM[(i + d + TEAM.length) % TEAM.length].id, { replace: true });
+  const close = () => nav("/team");
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") close(); else if (e.key === "ArrowRight") go(lang === "ar" ? -1 : 1); else if (e.key === "ArrowLeft") go(lang === "ar" ? 1 : -1); };
+    addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow; document.body.style.overflow = "hidden";
+    return () => { removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [m.id, lang]);
+  useEffect(() => {
+    if (still) return;
+    const el = root.current, h = hang.current;
+    const tl = gsap.timeline();
+    tl.fromTo(el.querySelector(".figure"), { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 0)
+      .fromTo(h, { rotation: -22, y: -80, opacity: 0 }, { rotation: 0, y: 0, opacity: 1, duration: 1.7, ease: "elastic.out(1,0.34)" }, 0.25)
+      .fromTo(el.querySelector(".cv"), { opacity: 0, x: lang === "ar" ? -40 : 40 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out", clearProps: "transform" }, 0.3)
+      .fromTo(el.querySelectorAll(".cv section,.cv .pager"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.08, ease: "power2.out", clearProps: "transform,opacity" }, 0.6);
+    const sway = gsap.to(h, { rotation: 1.4, duration: 2.8, yoyo: true, repeat: -1, ease: "sine.inOut", delay: 2.2 });
+    return () => { tl.kill(); sway.kill(); };
+  }, [m.id]);
+  useLayoutEffect(() => {
+    const fit = () => { const st = root.current.querySelector(".stage"); st.style.zoom = innerWidth <= 900 ? "" : Math.max(0.55, Math.min(1, (innerHeight - 84) / 900)).toFixed(3); };
+    fit(); addEventListener("resize", fit); return () => removeEventListener("resize", fit);
+  }, []);
+  const exp = m.experience, skills = m.skills[lang], has = m.summary[lang] || exp.length || skills.length || m.contact.length;
+  return (
+    <div className="badge" ref={root} role="dialog" aria-modal="true" aria-label={m.name[lang]} onClick={(e) => { if (e.target === e.currentTarget) close(); }} style={{ "--tone": m.tone }}>
+      <button type="button" className="x" onClick={close} aria-label={t.close}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+      <div className="stage">
+        <svg className="figure" viewBox="0 0 360 640" aria-hidden="true">
+          <defs>
+            <linearGradient id="fg-skin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="var(--f1)" /><stop offset="1" stopColor="var(--f2)" /></linearGradient>
+            <linearGradient id="fg-suit" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="var(--s1)" /><stop offset="1" stopColor="var(--s2)" /></linearGradient>
+            <linearGradient id="fg-strap" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#3b6659" /><stop offset=".5" stopColor="#4D7F71" /><stop offset="1" stopColor="#3b6659" /></linearGradient>
+            <linearGradient id="fg-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f0d873" /><stop offset=".5" stopColor="#B99C16" /><stop offset="1" stopColor="#8a7410" /></linearGradient>
+          </defs>
+          <ellipse className="floor" cx="180" cy="628" rx="150" ry="10" />
+          <path className="strapback" d="M132 196 C150 176 210 176 228 196 L224 214 C206 198 154 198 136 214Z" />
+          <path fill="url(#fg-suit)" d="M18 640V372c0-58 40-84 92-98l44-14 26 34 26-34 44 14c52 14 92 40 92 98v268z" />
+          <path className="lapel" d="M154 260 L180 388 L128 300 L140 264Z M206 260 L180 388 L232 300 L220 264Z" />
+          <path className="shirt" d="M154 260 L180 388 L206 260 L196 240 H164Z" />
+          <path fill="url(#fg-skin)" d="M152 176h56v72c0 12-12 26-28 26s-28-14-28-26z" />
+          <path className="chin" d="M152 206c14 16 42 16 56 0v20c-14 14-42 14-56 0z" />
+          <path fill="url(#fg-skin)" d="M180 46c38 0 60 28 60 68 0 46-26 88-60 88s-60-42-60-88c0-40 22-68 60-68z" />
+          <path className="shine" d="M152 68c-14 12-20 30-18 52" />
+          <path className="seam" d="M64 640V430 M296 640V430" />
+          <g className="lanyard">
+            <path className="ribbon" d="M140 232 L180 372" /><path className="print" d="M140 232 L180 372" />
+            <path className="ribbon" d="M220 232 L180 372" /><path className="print" d="M220 232 L180 372" />
+            <rect className="buckle" x="-17" y="-10" width="34" height="20" rx="4" transform="translate(205 286) rotate(16)" fill="url(#fg-gold)" />
+            <rect x="166" y="358" width="28" height="22" rx="3" fill="url(#fg-strap)" />
+            <circle cx="180" cy="390" r="9" fill="none" stroke="url(#fg-gold)" strokeWidth="4.5" />
+          </g>
+        </svg>
+        <div className="hang" ref={hang}>
+          <svg className="hook" viewBox="0 0 30 40" aria-hidden="true"><path d="M15 2v9M8 11h14v6a7 7 0 0 1-7 7 7 7 0 0 1-7-7z M15 24v6a5 5 0 0 1-5 5" fill="none" stroke="#B99C16" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <Card3D m={m} i={i} t={t} />
+        </div>
+        <p className="hint">{t.dragHint}</p>
+      </div>
+
+      <article className="cv">
+        <header>
+          <svg className="pat" viewBox="0 0 400 120" preserveAspectRatio="xMaxYMid slice" aria-hidden="true"><path d="M250 -20 L330 60 L250 140 H290 L370 60 L290 -20Z M320 -20 L400 60 L320 140 H360 L440 60 L360 -20Z" /></svg>
+          <span className="eyebrow">{t.cv} · <span className="mono">{code(i)}</span></span>
+          <h2>{m.name[lang]}</h2>
+          <span className="alt" lang={other(lang)}>{m.name[other(lang)]}</span>
+          <p className="role">{m.role[lang] || t.member}</p>
+        </header>
+        <div className="cvbody">
+          {m.summary[lang] && <section><h3>{t.about}</h3><div><p>{m.summary[lang]}</p></div></section>}
+          {exp.length > 0 && <section><h3>{t.exp}</h3><div className="exp">{exp.map((x, k) => (<div key={k}><b>{x.title[lang]}</b><span>{x.place[lang]}</span><small className="mono">{x.period}</small></div>))}</div></section>}
+          {skills.length > 0 && <section><h3>{t.skills}</h3><div className="tags">{skills.map((f) => <span key={f}>{f}</span>)}</div></section>}
+          {m.contact.length > 0 && <section><h3>{t.contact}</h3><div className="contact">{m.contact.map((c, k) => (<div key={k}><span>{c.label[lang]}</span>{c.href ? <a className="mono" href={c.href}>{c.value}</a> : <b className="mono">{c.value}</b>}</div>))}</div></section>}
+          {!has && <section><h3>{t.about}</h3><div><p className="pending">{t.pending}</p></div></section>}
+          <div className="pager"><button type="button" onClick={() => go(-1)}><Arrow />{t.prev}</button><span className="mono">{i + 1} / {TEAM.length}</span><button type="button" onClick={() => go(1)}>{t.next}<Arrow /></button></div>
+        </div>
+      </article>
+    </div>
+  );
+}
+
 function Team({ lang }) {
   const t = UI[lang];
+  const { id } = useParams();
   const root = useRef(null);
-  useEffect(() => { document.title = t.team + " · " + t.brand; }, [t]);
-  useEffect(() => {
-    const el = root.current;
-    rise(el.querySelectorAll("h1 span>span"), 0.1);
-    drawIn(el.querySelectorAll(".spine path.lay"), { duration: 1.8, delay: 0.2 });
-    bloom(el.querySelectorAll(".stop"), 0.16);
-  }, [lang]);
+  const idx = TEAM.findIndex((m) => m.id === id);
+  useEffect(() => { document.title = (idx >= 0 ? TEAM[idx].name[lang] + " · " : "") + t.team + " · " + t.brand; }, [t, idx, lang]);
+  useEffect(() => { const el = root.current; rise(el.querySelectorAll("h1 span>span"), 0.1); bloom(el.querySelectorAll(".pcard"), 0.11); }, [lang]);
+  const lean = (e) => { if (still) return; const el = e.currentTarget, r = el.getBoundingClientRect(); el.style.setProperty("--ry", (((e.clientX - r.left) / r.width - 0.5) * 16).toFixed(1) + "deg"); el.style.setProperty("--rx", ((0.5 - (e.clientY - r.top) / r.height) * 12).toFixed(1) + "deg"); };
+  const level = (e) => { e.currentTarget.style.setProperty("--ry", "0deg"); e.currentTarget.style.setProperty("--rx", "0deg"); };
   return (
     <div className="teampage" ref={root}>
       <div className="head top"><div><h1><span><span>{t.teamH}</span></span></h1><p>{t.teamP}</p></div></div>
-      <div className="lanes">
-        <svg className="spine" viewBox="0 0 60 100" preserveAspectRatio="none" aria-hidden="true"><path className="lay" d="M30 0V100" /><path className="mid" d="M30 0V100" /></svg>
+      <div className="people">
         {TEAM.map((m, i) => (
-          <article key={m.id} className={"stop " + (i % 2 ? "b" : "a")} style={{ "--tone": m.tone }}>
-            <i className="dot" />
-            <div className="who">
-              <Shield m={m} />
-              <div><h2>{m.name[lang]}</h2><span className="alt" lang={other(lang)}>{m.name[other(lang)]}</span>{m.role[lang] && <p className="role">{m.role[lang]}</p>}</div>
-            </div>
-          </article>
+          <Link key={m.id} to={"/team/" + m.id} className="pcard" style={{ "--tone": m.tone }} onPointerMove={lean} onPointerLeave={level} aria-label={m.name[lang]}>
+            <i className="slot" /><CardFront m={m} i={i} />
+          </Link>
         ))}
       </div>
+      {idx >= 0 && <Badge m={TEAM[idx]} i={idx} lang={lang} />}
     </div>
   );
 }
@@ -348,7 +502,7 @@ export default function App() {
   const [view, setViewState] = useState(store.get("docs-view") === "sidebar" ? "sidebar" : "cards");
   const loc = useLocation();
   useEffect(() => { syncChild(lang, mode); }, [lang, mode]);
-  useEffect(() => { scrollTo(0, 0); }, [loc.pathname]);
+  useEffect(() => { if (!loc.pathname.startsWith("/team/")) scrollTo(0, 0); }, [loc.pathname]);
   const setView = (v) => { store.set("docs-view", v); setViewState(v); };
   const onLang = (next) => {
     if (next === lang) return;
@@ -369,6 +523,7 @@ export default function App() {
           <Route path="/" element={<Home lang={lang} />} />
           <Route path="/docs" element={<Docs lang={lang} view={view} setView={setView} />} />
           <Route path="/team" element={<Team lang={lang} />} />
+          <Route path="/team/:id" element={<Team lang={lang} />} />
           <Route path="/assets" element={<Navigate to="/road-assets-tree" replace />} />
           <Route path="/tomtom" element={<Navigate to="/tomtom-travel-time" replace />} />
           <Route path="/:slug" element={<Viewer lang={lang} view={view} setView={setView} />} />
