@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
-import { CATEGORIES, DOCS, REPO_URL } from "./docs.js";
+import { CATEGORIES, DOCS } from "./docs.js";
 import { bloom, pageTurn, pop, themeReveal } from "./motion.js";
 
 const page = document.documentElement;
@@ -15,14 +15,14 @@ const UI = {
     brand: "مركز التوثيق", eyebrow: "أنظمة الطرق · مرجع الفريق",
     lead: "كل ما يخص المشروع في مكان واحد: التصنيفات، مراجع التكامل، والأدلة. كل صفحة لها رابط ثابت.",
     search: "ابحث في الصفحات…", all: "الكل", open: "فتح", updated: "آخر تحديث", pages: "صفحة",
-    none: "لا توجد صفحة مطابقة.", add: "إضافة صفحة جديدة", addText: "ملف واحد وسطر في السجل. الخطوات في README.",
+    none: "لا توجد صفحة مطابقة.",
     back: "المركز", standalone: "فتح في تبويب مستقل", missing: "الصفحة غير موجودة", home: "العودة إلى المركز",
   },
   en: {
     brand: "Docs Hub", eyebrow: "Road systems · team reference",
     lead: "Everything about the project in one place: classifications, integration references and guides. Every page has a stable link.",
     search: "Search pages…", all: "All", open: "Open", updated: "Updated", pages: "pages",
-    none: "No matching page.", add: "Add a new page", addText: "One file and one registry entry. Steps are in the README.",
+    none: "No matching page.",
     back: "Hub", standalone: "Open in its own tab", missing: "Page not found", home: "Back to the hub",
   },
 };
@@ -31,7 +31,6 @@ const ICONS = {
   tree: <path d="M12 3v6M6 21v-6h12v6M12 9v6M4 21h4M16 21h4M10 3h4" />,
   route: <path d="M6 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 17h6a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h6" />,
   doc: <path d="M7 3h7l4 4v14H7zM14 3v4h4M10 12h5M10 16h5" />,
-  plus: <path d="M12 5v14M5 12h14" />,
 };
 const Icon = ({ name }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -122,11 +121,6 @@ function Home({ lang, mode, onLang, onMode }) {
             </span>
           </Link>
         ))}
-        <a className="card add" href={REPO_URL + "#adding-a-page"} target="_blank" rel="noopener">
-          <span className="ic"><Icon name="plus" /></span>
-          <span className="tx"><b>{t.add}</b></span>
-          <p>{t.addText}</p>
-        </a>
       </div>
       {!list.length && <p className="none">{t.none}</p>}
     </div>
