@@ -23,7 +23,7 @@ export const DOCS = [
       ar: "تصنيف أصول الطرق من الجذر إلى آخر مكوّن: تصنيفان، 12 قسمًا، و279 أصلًا ومكوّنًا.",
       en: "The road asset classification from the root to the last component: 2 classes, 12 families, 279 assets and components.",
     },
-    updated: "2026-11-23",
+    updated: "2026-11-24",
     src: "/pages/road-assets-tree/index.html",
     sync: { modeKey: "assets-tree-mode", langHash: true },
   },
