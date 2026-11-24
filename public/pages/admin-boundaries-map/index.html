@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{if(window.self!==window.top&&window.parent.location.origin===location.origin)document.documentElement.classList.add("embedded");}catch(e){}</script>
+<style>html.embedded .tools{display:none!important}</style>
 <title>خريطة التقسيمات الإدارية</title>
 <script>(function(){var d=document.documentElement,g;try{g=localStorage.getItem('ab-lang');}catch(e){}if(g==='en'){d.lang='en';d.dir='ltr';}var m;try{m=localStorage.getItem('ab-mode');}catch(e){}if(m!=='dark'&&m!=='light'){m=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}d.setAttribute('data-mode',m);})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -593,6 +595,25 @@ async function boot() {
   addEventListener("storage", (e) => { if (e.key === "ab-lang" && e.newValue && e.newValue !== lang) setLang(e.newValue); if (e.key === "ab-mode" && e.newValue && e.newValue !== mode) setMode(e.newValue, document.querySelector("#pillTheme button")); });
 }
 boot();
+</script>
+<script>
+/* Inside the docs hub this page has no language or theme buttons of its own: it follows the hub's. */
+(function(){
+  var root=document.documentElement;
+  if(!root.classList.contains("embedded"))return;
+  function press(sel){
+    var b=document.querySelector(sel);if(!b)return;
+    var vt=Object.getOwnPropertyDescriptor(document,"startViewTransition"),an=Element.prototype.animate;
+    try{document.startViewTransition=undefined;Element.prototype.animate=undefined;b.click();}
+    finally{Element.prototype.animate=an;if(vt)Object.defineProperty(document,"startViewTransition",vt);else delete document.startViewTransition;}
+  }
+  window.addEventListener("message",function(e){
+    if(e.origin!==location.origin)return;var d=e.data||{};if(d.type!=="docs-prefs")return;
+    if(d.lang&&(root.lang||"ar")!==d.lang)press('.tools .pill.lang button[data-l="'+d.lang+'"],.tools .pill.lang button[data-lang="'+d.lang+'"]');
+    if(d.mode&&root.getAttribute("data-mode")!==d.mode)press('.tools .pill button[data-m="'+d.mode+'"],.tools .pill button[data-mode="'+d.mode+'"]');
+  });
+  try{window.parent.postMessage({type:"docs-ready"},location.origin);}catch(x){}
+})();
 </script>
 </body>
 </html>

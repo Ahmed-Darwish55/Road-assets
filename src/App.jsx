@@ -280,16 +280,22 @@ function Docs({ lang, view, setView }) {
   );
 }
 
-function Viewer({ lang, view, setView }) {
+function Viewer({ lang, mode, view, setView }) {
   const t = UI[lang];
   const { slug } = useParams();
   const [q, setQ] = useState("");
   const doc = DOCS.find((d) => d.slug === slug);
   const Page = useMemo(() => (doc?.load ? lazy(doc.load) : null), [doc]);
   useEffect(() => { if (doc) document.title = doc.title[lang] + " · " + t.brand; }, [doc, lang, t]);
+  /* The page inside the frame has no toggles of its own: it follows the hub's language and theme, live. */
+  const frame = useRef(null), prefs = useRef({ lang, mode });
+  prefs.current = { lang, mode };
+  const tell = () => { try { frame.current?.contentWindow?.postMessage({ type: "docs-prefs", ...prefs.current }, location.origin); } catch {} };
+  const src = useMemo(() => (doc?.src ? doc.src + (doc.sync?.langHash ? "#" + lang : "") : null), [doc?.slug]);
+  useEffect(tell, [lang, mode]);
+  useEffect(() => { const on = (e) => { if (e.origin === location.origin && e.data?.type === "docs-ready") tell(); }; addEventListener("message", on); return () => removeEventListener("message", on); }, []);
   if (!doc) return (<div className="docs missing"><h1>{t.missing}</h1><p className="mono">/{slug}</p><Link className="btn solid" to="/">{t.home}</Link></div>);
-  const src = doc.src ? doc.src + (doc.sync?.langHash ? "#" + lang : "") : null;
-  const body = src ? <iframe key={src} src={src} title={doc.title[lang]} allow="fullscreen; clipboard-write" /> : <Suspense fallback={null}><Page lang={lang} /></Suspense>;
+  const body = src ? <iframe key={doc.slug} ref={frame} src={src} title={doc.title[lang]} allow="fullscreen; clipboard-write" onLoad={tell} /> : <Suspense fallback={null}><Page lang={lang} /></Suspense>;
   return (
     <div className={"viewer " + view}>
       <div className="vbar">
@@ -640,7 +646,7 @@ export default function App() {
           <Route path="/team/:id" element={<Team lang={lang} />} />
           <Route path="/assets" element={<Navigate to="/road-assets-tree" replace />} />
           <Route path="/tomtom" element={<Navigate to="/tomtom-travel-time" replace />} />
-          <Route path="/:slug" element={<Viewer lang={lang} view={view} setView={setView} />} />
+          <Route path="/:slug" element={<Viewer lang={lang} mode={mode} view={view} setView={setView} />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
