@@ -6,7 +6,7 @@ The team's documentation hub: classifications, integration references and guides
 | --- | --- |
 | `/` | Home |
 | `/docs` | Every document, as cards or as a sidebar list |
-| `/team` | The team and each member's role (edit `src/team.js`) |
+| `/team` | The team as cards; `/team/<id>` opens a member's badge and details (edit `src/team.js`, photos go in `public/team/`) |
 | `/road-assets-tree` | Road Assets Tree: 2 classifications, 12 families, 279 assets and components |
 | `/tomtom-travel-time` | Travel time between traffic counters with the TomTom Routing API |
 

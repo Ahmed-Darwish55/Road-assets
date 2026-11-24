@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { Link, NavLink, Navigate, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { CATEGORIES, DOCS } from "./docs.js";
 import { TEAM } from "./team.js";
 import { bloom, drawIn, gsap, onReveal, pageTurn, pop, rise, still, themeReveal } from "./motion.js";
@@ -23,7 +23,7 @@ const UI = {
     search: "ابحث في الوثائق…", all: "الكل", cards: "بطاقات", sidebar: "قائمة جانبية", view: "طريقة العرض",
     updated: "آخر تحديث", none: "لا توجد وثيقة مطابقة.", open: "فتح الوثيقة", standalone: "تبويب مستقل",
     pick: "اختر وثيقة من القائمة", missing: "الصفحة غير موجودة", home: "العودة إلى الرئيسية",
-    teamH: "الفريق", teamP: "الأشخاص وراء المشروع، وكلٌّ في مساره.", count: (n) => `${n} وثائق`,
+    teamH: "الفريق", teamP: "اضغط أي بطاقة لترى بطاقة التعريف والتفاصيل.", idLabel: "بطاقة تعريف", about: "نبذة", focus: "مجالات العمل", links: "روابط", pending: "لم تُضف تفاصيل هذا العضو بعد.", close: "إغلاق", prev: "السابق", next: "التالي", org: "أنظمة الطرق · مركز التوثيق", member: "عضو الفريق", count: (n) => `${n} وثائق`,
     foot: "مرجع داخلي للفريق.",
   },
   en: {
@@ -37,7 +37,7 @@ const UI = {
     search: "Search the docs…", all: "All", cards: "Cards", sidebar: "Sidebar", view: "View",
     updated: "Updated", none: "No matching document.", open: "Open document", standalone: "Own tab",
     pick: "Pick a document from the list", missing: "Page not found", home: "Back to home",
-    teamH: "The team", teamP: "The people behind the project, each in their lane.", count: (n) => `${n} documents`,
+    teamH: "The team", teamP: "Click any card to see the badge and the details.", idLabel: "ID badge", about: "About", focus: "Focus areas", links: "Links", pending: "Details for this member have not been added yet.", close: "Close", prev: "Previous", next: "Next", org: "Road systems · Docs Hub", member: "Team member", count: (n) => `${n} documents`,
     foot: "Internal team reference.",
   },
 };
@@ -109,13 +109,12 @@ function Sign({ doc, lang, compact }) {
   );
 }
 
-function Shield({ m, size = 76 }) {
+/* A portrait, or the member's initials on their colour when no photo has been added. */
+function Face({ m, className = "" }) {
   return (
-    <svg className="shield" viewBox="0 0 80 88" width={size} aria-hidden="true" style={{ "--tone": m.tone }}>
-      <path d="M8 6h64a4 4 0 0 1 4 4v34c0 20-16 32-36 40C20 76 4 64 4 44V10a4 4 0 0 1 4-4z" />
-      <path className="in" d="M12 11h56v33c0 16-13 26-28 33-15-7-28-17-28-33z" />
-      <text x="40" y="47" textAnchor="middle">{m.mark}</text>
-    </svg>
+    <span className={"face " + className} style={{ "--tone": m.tone }}>
+      {m.photo ? <img src={m.photo} alt="" loading="lazy" /> : <i aria-hidden="true">{m.mark}</i>}
+    </span>
   );
 }
 
@@ -206,7 +205,7 @@ function Home({ lang }) {
 
       <section className="band reveal">
         <div className="head"><div><h2>{t.team}</h2><p>{t.teamLead}</p></div><Link className="more" to="/team">{t.allTeam}<Arrow /></Link></div>
-        <div className="crew">{TEAM.map((m) => (<Link key={m.id} to="/team" className="member"><Shield m={m} size={64} /><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
+        <div className="crew">{TEAM.map((m) => (<Link key={m.id} to={"/team/" + m.id} className="member"><Face m={m} /><b>{m.name[lang]}</b>{m.role[lang] && <small>{m.role[lang]}</small>}</Link>))}</div>
       </section>
       <footer className="foot"><span>{t.foot}</span><span className="mono">{DOCS.length} docs · {TEAM.length} people</span></footer>
     </div>
@@ -313,31 +312,114 @@ function Viewer({ lang, view, setView }) {
   );
 }
 
+const code = (i) => "RD-" + String(i + 1).padStart(3, "0");
+const bars = (id) => [...id].map((c, i) => 1 + ((c.charCodeAt(0) + i * 7) % 4));
+
+/* The card the member wears: solid and readable, with a foil band that catches the light. */
+function IdCard({ m, i, lang }) {
+  const t = UI[lang];
+  return (
+    <div className="idcard" style={{ "--tone": m.tone }}>
+      <div className="slot" />
+      <div className="idtop"><b>{t.org}</b><span className="mono">{code(i)}</span></div>
+      <Face m={m} className="idphoto" />
+      <div className="idname"><b>{m.name[lang]}</b><span lang={other(lang)}>{m.name[other(lang)]}</span></div>
+      <div className="idrole">{m.role[lang] || t.member}</div>
+      <div className="idfoot"><span className="barcode" aria-hidden="true">{bars(m.id).map((w, k) => <i key={k} style={{ width: w + "px" }} />)}</span><span className="mono">{m.mark}</span></div>
+      <div className="foil" aria-hidden="true" />
+      <div className="glare" aria-hidden="true" />
+    </div>
+  );
+}
+
+/* A figure wearing the badge on a lanyard, with the member's details projected beside it. */
+function Badge({ m, i, lang }) {
+  const t = UI[lang];
+  const nav = useNavigate();
+  const root = useRef(null), hang = useRef(null), stage = useRef(null);
+  const go = (d) => nav("/team/" + TEAM[(i + d + TEAM.length) % TEAM.length].id, { replace: true });
+  const close = () => nav("/team");
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") close(); else if (e.key === "ArrowRight") go(lang === "ar" ? -1 : 1); else if (e.key === "ArrowLeft") go(lang === "ar" ? 1 : -1); };
+    addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow; document.body.style.overflow = "hidden";
+    root.current.querySelector(".x").focus();
+    return () => { removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [m.id, lang]);
+  useEffect(() => {
+    if (still) return;
+    const el = root.current, h = hang.current;
+    const tl = gsap.timeline();
+    tl.fromTo(el.querySelector(".figure"), { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0)
+      .fromTo(el.querySelectorAll(".strap"), { strokeDasharray: 200, strokeDashoffset: 200 }, { strokeDashoffset: 0, duration: 0.5, ease: "power2.out" }, 0.2)
+      .fromTo(h, { rotation: -26, y: -70, opacity: 0 }, { rotation: 0, y: 0, opacity: 1, duration: 1.7, ease: "elastic.out(1,0.32)" }, 0.35)
+      .fromTo(el.querySelector(".holo"), { opacity: 0, scaleY: 0.02, transformOrigin: "50% 100%" }, { opacity: 1, scaleY: 1, duration: 0.45, ease: "power3.out" }, 0.5)
+      .fromTo(el.querySelectorAll(".holo .in>*"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.07, ease: "power2.out" }, 0.85);
+    const sway = gsap.to(h, { rotation: 1.8, duration: 2.6, yoyo: true, repeat: -1, ease: "sine.inOut", delay: 2.2 });
+    return () => { tl.kill(); sway.kill(); };
+  }, [m.id]);
+  const tilt = (e) => {
+    if (still) return;
+    const r = stage.current.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+    const c = stage.current.style; c.setProperty("--ry", (x * 26).toFixed(1) + "deg"); c.setProperty("--rx", (-y * 16).toFixed(1) + "deg"); c.setProperty("--gx", (50 + x * 90).toFixed(0) + "%"); c.setProperty("--gy", (50 + y * 90).toFixed(0) + "%");
+  };
+  const rest = () => { const c = stage.current.style; c.setProperty("--ry", "0deg"); c.setProperty("--rx", "0deg"); };
+  const has = m.bio[lang] || m.focus[lang].length || m.links.length;
+  return (
+    <div className="badge" ref={root} role="dialog" aria-modal="true" aria-label={m.name[lang]} onClick={(e) => { if (e.target === e.currentTarget) close(); }} style={{ "--tone": m.tone }}>
+      <button type="button" className="x" onClick={close} aria-label={t.close}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg></button>
+      <div className="stage" ref={stage} onPointerMove={tilt} onPointerLeave={rest}>
+        <svg className="figure" viewBox="0 0 320 560" aria-hidden="true">
+          <path className="body" d="M22 560V262c0-66 58-96 138-96s138 30 138 96v298z" />
+          <rect className="body" x="136" y="118" width="48" height="62" rx="20" />
+          <circle className="body" cx="160" cy="78" r="56" />
+          <path className="rim" d="M22 262c0-66 58-96 138-96s138 30 138 96" />
+          <path className="strap" d="M124 172 L160 296" /><path className="strap" d="M196 172 L160 296" />
+        </svg>
+        <div className="hang" ref={hang}><i className="clip" /><IdCard m={m} i={i} lang={lang} /></div>
+      </div>
+      <div className="holo">
+        <div className="in">
+          <span className="tagline mono">{code(i)} · {t.idLabel}</span>
+          <h2>{m.name[lang]}</h2>
+          <span className="alt" lang={other(lang)}>{m.name[other(lang)]}</span>
+          {m.role[lang] && <p className="role">{m.role[lang]}</p>}
+          {m.bio[lang] && (<><h3>{t.about}</h3><p>{m.bio[lang]}</p></>)}
+          {m.focus[lang].length > 0 && (<><h3>{t.focus}</h3><div className="tags">{m.focus[lang].map((f) => <span key={f}>{f}</span>)}</div></>)}
+          {m.links.length > 0 && (<><h3>{t.links}</h3><div className="tags">{m.links.map((l) => <a key={l.href} href={l.href} target="_blank" rel="noopener">{l.label}</a>)}</div></>)}
+          {!has && <p className="pending">{t.pending}</p>}
+          <div className="pager"><button type="button" onClick={() => go(-1)}><Arrow />{t.prev}</button><span className="mono">{i + 1} / {TEAM.length}</span><button type="button" onClick={() => go(1)}>{t.next}<Arrow /></button></div>
+        </div>
+        <i className="beam" aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
 function Team({ lang }) {
   const t = UI[lang];
+  const { id } = useParams();
   const root = useRef(null);
-  useEffect(() => { document.title = t.team + " · " + t.brand; }, [t]);
-  useEffect(() => {
-    const el = root.current;
-    rise(el.querySelectorAll("h1 span>span"), 0.1);
-    drawIn(el.querySelectorAll(".spine path.lay"), { duration: 1.8, delay: 0.2 });
-    bloom(el.querySelectorAll(".stop"), 0.16);
-  }, [lang]);
+  const idx = TEAM.findIndex((m) => m.id === id);
+  useEffect(() => { document.title = (idx >= 0 ? TEAM[idx].name[lang] + " · " : "") + t.team + " · " + t.brand; }, [t, idx, lang]);
+  useEffect(() => { const el = root.current; rise(el.querySelectorAll("h1 span>span"), 0.1); bloom(el.querySelectorAll(".pcard"), 0.11); }, [lang]);
+  const lean = (e) => { if (still) return; const el = e.currentTarget, r = el.getBoundingClientRect(); el.style.setProperty("--ry", (((e.clientX - r.left) / r.width - 0.5) * 14).toFixed(1) + "deg"); el.style.setProperty("--rx", ((0.5 - (e.clientY - r.top) / r.height) * 10).toFixed(1) + "deg"); el.style.setProperty("--gx", (((e.clientX - r.left) / r.width) * 100).toFixed(0) + "%"); };
+  const level = (e) => { e.currentTarget.style.setProperty("--ry", "0deg"); e.currentTarget.style.setProperty("--rx", "0deg"); };
   return (
     <div className="teampage" ref={root}>
       <div className="head top"><div><h1><span><span>{t.teamH}</span></span></h1><p>{t.teamP}</p></div></div>
-      <div className="lanes">
-        <svg className="spine" viewBox="0 0 60 100" preserveAspectRatio="none" aria-hidden="true"><path className="lay" d="M30 0V100" /><path className="mid" d="M30 0V100" /></svg>
+      <div className="people">
         {TEAM.map((m, i) => (
-          <article key={m.id} className={"stop " + (i % 2 ? "b" : "a")} style={{ "--tone": m.tone }}>
-            <i className="dot" />
-            <div className="who">
-              <Shield m={m} />
-              <div><h2>{m.name[lang]}</h2><span className="alt" lang={other(lang)}>{m.name[other(lang)]}</span>{m.role[lang] && <p className="role">{m.role[lang]}</p>}</div>
-            </div>
-          </article>
+          <Link key={m.id} to={"/team/" + m.id} className="pcard" style={{ "--tone": m.tone }} onPointerMove={lean} onPointerLeave={level}>
+            <span className="hole" aria-hidden="true" />
+            <Face m={m} />
+            <span className="cap"><b>{m.name[lang]}</b><small lang={other(lang)}>{m.name[other(lang)]}</small>{m.role[lang] && <em>{m.role[lang]}</em>}</span>
+            <span className="num mono">{code(i)}</span>
+            <span className="sheen" aria-hidden="true" />
+          </Link>
         ))}
       </div>
+      {idx >= 0 && <Badge m={TEAM[idx]} i={idx} lang={lang} />}
     </div>
   );
 }
@@ -348,7 +430,7 @@ export default function App() {
   const [view, setViewState] = useState(store.get("docs-view") === "sidebar" ? "sidebar" : "cards");
   const loc = useLocation();
   useEffect(() => { syncChild(lang, mode); }, [lang, mode]);
-  useEffect(() => { scrollTo(0, 0); }, [loc.pathname]);
+  useEffect(() => { if (!loc.pathname.startsWith("/team/")) scrollTo(0, 0); }, [loc.pathname]);
   const setView = (v) => { store.set("docs-view", v); setViewState(v); };
   const onLang = (next) => {
     if (next === lang) return;
@@ -369,6 +451,7 @@ export default function App() {
           <Route path="/" element={<Home lang={lang} />} />
           <Route path="/docs" element={<Docs lang={lang} view={view} setView={setView} />} />
           <Route path="/team" element={<Team lang={lang} />} />
+          <Route path="/team/:id" element={<Team lang={lang} />} />
           <Route path="/assets" element={<Navigate to="/road-assets-tree" replace />} />
           <Route path="/tomtom" element={<Navigate to="/tomtom-travel-time" replace />} />
           <Route path="/:slug" element={<Viewer lang={lang} view={view} setView={setView} />} />
